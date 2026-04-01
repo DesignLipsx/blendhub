@@ -6,6 +6,7 @@ using Microsoft.Windows.AppNotifications;
 using Microsoft.Windows.AppNotifications.Builder;
 using System.Diagnostics;
 using BlendHub.Models;
+using BlendHub.Helpers;
 
 namespace BlendHub.Services
 {

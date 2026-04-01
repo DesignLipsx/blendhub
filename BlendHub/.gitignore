@@ -84,3 +84,5 @@ BenchmarkDotNet.Artifacts/
 *.log
 local.settings.json
 appsettings.local.json
+build_release.bat
+generate_assets.py

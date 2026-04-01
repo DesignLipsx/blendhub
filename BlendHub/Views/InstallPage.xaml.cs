@@ -47,10 +47,18 @@ namespace BlendHub.Views
                 _versionGroups = Enumerable.Empty<BlenderVersionGroup>();
                 _installerCache.Clear();
 
-                var jsonFileName = _currentSource == "web" ? "blender_versions_web.json" : "blender_versions_store.json";
-                var uri = new Uri($"ms-appx:///{jsonFileName}");
-                var file = await StorageFile.GetFileFromApplicationUriAsync(uri);
-                var jsonText = await FileIO.ReadTextAsync(file);
+                // Try to fetch from GitHub first, fallback to local JSON
+                var fetcher = new BlenderVersionFetcher();
+                var jsonText = await fetcher.FetchVersionsJsonAsync();
+
+                // If GitHub fetch fails, use local fallback
+                if (string.IsNullOrEmpty(jsonText))
+                {
+                    var jsonFileName = _currentSource == "web" ? "blender_versions_web.json" : "blender_versions_store.json";
+                    var uri = new Uri($"ms-appx:///{jsonFileName}");
+                    var file = await StorageFile.GetFileFromApplicationUriAsync(uri);
+                    jsonText = await FileIO.ReadTextAsync(file);
+                }
 
                 _rawVersionData = JsonSerializer.Deserialize<Dictionary<string, BlenderVersionJsonInfo>>(jsonText);
 
