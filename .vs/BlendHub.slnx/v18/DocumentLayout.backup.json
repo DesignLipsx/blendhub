@@ -3,6 +3,10 @@
   "WorkspaceRootPath": "E:\\apps\\BlendHub\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{FC1CF52A-CF3D-140B-F7C7-B9CB3DA178EE}|BlendHub\\BlendHub.csproj|e:\\apps\\blendhub\\blendhub\\.gitignore||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{FC1CF52A-CF3D-140B-F7C7-B9CB3DA178EE}|BlendHub\\BlendHub.csproj|solutionrelative:blendhub\\.gitignore||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\apps\\BlendHub\\requirements.txt||{8B382828-6202-11D1-8870-0000F87579D2}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:requirements.txt||{8B382828-6202-11D1-8870-0000F87579D2}"
     },
@@ -13,10 +17,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\apps\\BlendHub\\.github\\workflows\\update-blender-versions.yml||{06C066C6-04A2-4E5D-8202-439FD4234EF1}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:.github\\workflows\\update-blender-versions.yml||{06C066C6-04A2-4E5D-8202-439FD4234EF1}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{FC1CF52A-CF3D-140B-F7C7-B9CB3DA178EE}|BlendHub\\BlendHub.csproj|e:\\apps\\blendhub\\blendhub\\.gitignore||{3B902123-F8A7-4915-9F01-361F908088D0}",
-      "RelativeMoniker": "D:0:0:{FC1CF52A-CF3D-140B-F7C7-B9CB3DA178EE}|BlendHub\\BlendHub.csproj|solutionrelative:blendhub\\.gitignore||{3B902123-F8A7-4915-9F01-361F908088D0}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{FC1CF52A-CF3D-140B-F7C7-B9CB3DA178EE}|BlendHub\\BlendHub.csproj|e:\\apps\\blendhub\\blendhub\\github_connection.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}",
@@ -93,6 +93,14 @@
     {
       "AbsoluteMoniker": "D:0:0:{FC1CF52A-CF3D-140B-F7C7-B9CB3DA178EE}|BlendHub\\BlendHub.csproj|e:\\apps\\blendhub\\blendhub\\helpers\\blenderversionfetcher.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{FC1CF52A-CF3D-140B-F7C7-B9CB3DA178EE}|BlendHub\\BlendHub.csproj|solutionrelative:blendhub\\helpers\\blenderversionfetcher.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FC1CF52A-CF3D-140B-F7C7-B9CB3DA178EE}|BlendHub\\BlendHub.csproj|e:\\apps\\blendhub\\blendhub\\views\\settingspage.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FC1CF52A-CF3D-140B-F7C7-B9CB3DA178EE}|BlendHub\\BlendHub.csproj|solutionrelative:blendhub\\views\\settingspage.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FC1CF52A-CF3D-140B-F7C7-B9CB3DA178EE}|BlendHub\\BlendHub.csproj|e:\\apps\\blendhub\\blendhub\\blendhub.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{FC1CF52A-CF3D-140B-F7C7-B9CB3DA178EE}|BlendHub\\BlendHub.csproj|solutionrelative:blendhub\\blendhub.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
     }
   ],
   "DocumentGroupContainers": [
@@ -102,7 +110,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
@@ -110,7 +118,46 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 24,
+              "Title": "BlendHub",
+              "DocumentMoniker": "E:\\apps\\BlendHub\\BlendHub\\BlendHub.csproj",
+              "RelativeDocumentMoniker": "BlendHub\\BlendHub.csproj",
+              "ToolTip": "E:\\apps\\BlendHub\\BlendHub\\BlendHub.csproj",
+              "RelativeToolTip": "BlendHub\\BlendHub.csproj",
+              "ViewState": "AgIAABAAAAAAAAAAAABBwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-04-01T17:37:33.455Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 23,
+              "Title": "SettingsPage.xaml.cs",
+              "DocumentMoniker": "E:\\apps\\BlendHub\\BlendHub\\Views\\SettingsPage.xaml.cs",
+              "RelativeDocumentMoniker": "BlendHub\\Views\\SettingsPage.xaml.cs",
+              "ToolTip": "E:\\apps\\BlendHub\\BlendHub\\Views\\SettingsPage.xaml.cs",
+              "RelativeToolTip": "BlendHub\\Views\\SettingsPage.xaml.cs",
+              "ViewState": "AgIAAA4AAAAAAAAAAABQwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-01T17:36:30.634Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 0,
+              "Title": ".gitignore",
+              "DocumentMoniker": "E:\\apps\\BlendHub\\BlendHub\\.gitignore",
+              "RelativeDocumentMoniker": "BlendHub\\.gitignore",
+              "ToolTip": "E:\\apps\\BlendHub\\BlendHub\\.gitignore",
+              "RelativeToolTip": "BlendHub\\.gitignore",
+              "ViewState": "AgIAAAcAAAAAAAAAAAAswAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2026-04-01T17:35:38.175Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
               "Title": "requirements.txt",
               "DocumentMoniker": "E:\\apps\\BlendHub\\requirements.txt",
               "RelativeDocumentMoniker": "requirements.txt",
@@ -136,7 +183,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "BlenderVersionFetcher.py",
               "DocumentMoniker": "E:\\apps\\BlendHub\\BlendHub\\Helpers\\BlenderVersionFetcher.py",
               "RelativeDocumentMoniker": "BlendHub\\Helpers\\BlenderVersionFetcher.py",
@@ -149,13 +196,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "update-blender-versions.yml",
               "DocumentMoniker": "E:\\apps\\BlendHub\\.github\\workflows\\update-blender-versions.yml",
               "RelativeDocumentMoniker": ".github\\workflows\\update-blender-versions.yml",
               "ToolTip": "E:\\apps\\BlendHub\\.github\\workflows\\update-blender-versions.yml",
               "RelativeToolTip": ".github\\workflows\\update-blender-versions.yml",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAADAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAABgAAAAAAAAAAAAAADAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003775|",
               "WhenOpened": "2026-04-01T17:28:29.377Z",
               "EditorCaption": ""
@@ -192,24 +239,11 @@
               "Title": ".gitignore",
               "DocumentMoniker": "E:\\apps\\BlendHub\\.gitignore",
               "RelativeDocumentMoniker": ".gitignore",
-              "ToolTip": "E:\\apps\\BlendHub\\.gitignore*",
-              "RelativeToolTip": ".gitignore*",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAEkAAAAAAAAAAAAAAA==",
+              "ToolTip": "E:\\apps\\BlendHub\\.gitignore",
+              "RelativeToolTip": ".gitignore",
+              "ViewState": "AgIAABAAAAAAAAAAAABBwEgAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
               "WhenOpened": "2026-04-01T17:13:07.315Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": ".gitignore",
-              "DocumentMoniker": "E:\\apps\\BlendHub\\BlendHub\\.gitignore",
-              "RelativeDocumentMoniker": "BlendHub\\.gitignore",
-              "ToolTip": "E:\\apps\\BlendHub\\BlendHub\\.gitignore",
-              "RelativeToolTip": "BlendHub\\.gitignore",
-              "ViewState": "AgIAAEwAAAAAAAAAAAAswFgAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
-              "WhenOpened": "2026-04-01T17:09:07.655Z",
               "EditorCaption": ""
             },
             {

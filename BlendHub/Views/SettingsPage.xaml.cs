@@ -14,15 +14,12 @@ namespace BlendHub.Views
     public sealed partial class SettingsPage : Page
     {
         public ObservableCollection<FileLauncher> Launchers { get; } = new ObservableCollection<FileLauncher>();
-        private bool _isInitializing = false;
 
         public SettingsPage()
         {
             this.InitializeComponent();
-            _isInitializing = true;
             LoadCurrentTheme();
             LoadLaunchers();
-            _isInitializing = false;
         }
 
         private void LoadCurrentTheme()
