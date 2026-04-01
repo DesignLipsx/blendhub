@@ -15,7 +15,6 @@
 **/[Ll]ogs/
 
 # Visual Studio cache/options
-.vs/**/*
 .vs/
 .vscode/
 .idea/
