@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "BlendHub (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "BlendHub (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

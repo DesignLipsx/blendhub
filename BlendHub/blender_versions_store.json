@@ -1,0 +1,74 @@
+{
+  "2.83": {
+    "version": "2.83",
+    "directory": "Blender2.83",
+    "windows_installers": [
+      {
+        "filename": "Blender 2.83 LTS",
+        "url": "https://apps.microsoft.com/detail/9ndc4wk85ms6",
+        "release_date": "June 3, 2020",
+        "size_bytes": 424800000
+      }
+    ]
+  },
+  "2.93": {
+    "version": "2.93",
+    "directory": "Blender2.93",
+    "windows_installers": [
+      {
+        "filename": "Blender 2.93 LTS",
+        "url": "https://apps.microsoft.com/detail/9n9dwd5gkd3v",
+        "release_date": "June 2, 2021",
+        "size_bytes": 644000000
+      }
+    ]
+  },
+  "3.3": {
+    "version": "3.3",
+    "directory": "Blender3.3",
+    "windows_installers": [
+      {
+        "filename": "Blender 3.3 LTS",
+        "url": "https://apps.microsoft.com/detail/9n1slk9r16tw",
+        "release_date": "September 7, 2022",
+        "size_bytes": 866700000
+      }
+    ]
+  },
+  "3.6": {
+    "version": "3.6",
+    "directory": "Blender3.6",
+    "windows_installers": [
+      {
+        "filename": "Blender 3.6 LTS",
+        "url": "https://apps.microsoft.com/detail/9pf6nvns3f0p",
+        "release_date": "June 27, 2023",
+        "size_bytes": 1100000000
+      }
+    ]
+  },
+  "4.2": {
+    "version": "4.2",
+    "directory": "Blender4.2",
+    "windows_installers": [
+      {
+        "filename": "Blender 4.2 LTS",
+        "url": "https://apps.microsoft.com/detail/9nw1b444ldlw",
+        "release_date": "July 16, 2024",
+        "size_bytes": 942500000
+      }
+    ]
+  },
+  "latest": {
+    "version": "latest",
+    "directory": "BlenderLatest",
+    "windows_installers": [
+      {
+        "filename": "Blender (latest version)",
+        "url": "https://apps.microsoft.com/detail/9pp3c07gtvrh",
+        "release_date": "January 11, 2018",
+        "size_bytes": 981200000
+      }
+    ]
+  }
+}

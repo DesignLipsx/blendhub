@@ -1,0 +1,39 @@
+﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+
+namespace BlendHub.Views
+{
+    public sealed partial class HomePage : Page
+    {
+        public HomePage()
+        {
+            this.InitializeComponent();
+        }
+
+        private void OnGoToBackup(object sender, RoutedEventArgs e)
+        {
+            NavigateToPage(typeof(BackupPage));
+        }
+
+        private void OnGoToRestore(object sender, RoutedEventArgs e)
+        {
+            NavigateToPage(typeof(RestorePage));
+        }
+
+        private void OnGoToSync(object sender, RoutedEventArgs e)
+        {
+            NavigateToPage(typeof(SyncPage));
+        }
+
+        private void OnGoToProject(object sender, RoutedEventArgs e)
+        {
+            NavigateToPage(typeof(ProjectPage));
+        }
+
+        private void NavigateToPage(Type pageType)
+        {
+            var mainWindow = (MainWindow)Application.Current.MainWindow;
+            mainWindow.ContentFrame.Navigate(pageType);
+        }
+    }
+}

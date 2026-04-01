@@ -1,0 +1,386 @@
+﻿<Page
+    x:Class="BlendHub.Views.InstallPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:BlendHub.Views"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:BlendHub.Models"
+    xmlns:converters="using:BlendHub.Converters"
+    mc:Ignorable="d">
+
+    <Page.Resources>
+        <!-- Converters -->
+        <converters:BytesToSizeConverter x:Key="BytesToSizeConverter" />
+        
+        <!-- List Layout Template -->
+        <ItemsPanelTemplate x:Key="ListLayoutTemplate">
+            <StackPanel Orientation="Vertical" />
+        </ItemsPanelTemplate>
+    </Page.Resources>
+
+    <Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="36,24,36,36">
+            <StackPanel>
+                <!-- Header -->
+                <StackPanel Spacing="4">
+                    <TextBlock
+                        Text="Install Blender"
+                        Style="{StaticResource TitleLargeTextBlockStyle}"
+                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                        AutomationProperties.HeadingLevel="Level1" />
+                    <TextBlock
+                        Text="Download and install different Blender versions"
+                        FontSize="16"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                </StackPanel>
+
+                <!-- Available Versions -->
+                <StackPanel Spacing="24" Margin="0,24,0,0">
+                    <!-- Search and Controls -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <!-- Search Bar -->
+                        <AutoSuggestBox x:Name="SearchBox" 
+                                       Grid.Column="0"
+                                       Width="300"
+                                       Height="36"
+                                       HorizontalAlignment="Left"
+                                       VerticalAlignment="Center"
+                                       PlaceholderText="Search Blender versions..."
+                                       TextChanged="SearchBox_TextChanged">
+                            <AutoSuggestBox.QueryIcon>
+                                <FontIcon Glyph="&#xE721;" FontSize="14" />
+                            </AutoSuggestBox.QueryIcon>
+                        </AutoSuggestBox>
+                        
+                        <!-- Refresh Button -->
+                        <Button x:Name="RefreshButton" 
+                                Grid.Column="1"
+                                Style="{StaticResource DefaultButtonStyle}"
+                                Width="36"
+                                Height="36"
+                                Padding="0"
+                                Margin="12,0,0,0"
+                                Click="RefreshButton_Click"
+                                ToolTipService.ToolTip="Refresh"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center">
+                            <FontIcon Glyph="&#xE72C;" FontSize="14" />
+                        </Button>
+
+                        <!-- Spacer -->
+                        <Grid Grid.Column="2"/>
+
+                        <!-- Source Dropdown -->
+                        <ComboBox x:Name="SourceComboBox" 
+                                  Grid.Column="3"
+                                  Width="180"
+                                  Height="36"
+                                  SelectedIndex="0"
+                                  SelectionChanged="SourceComboBox_SelectionChanged"
+                                  HorizontalAlignment="Right"
+                                  VerticalAlignment="Center">
+                            <ComboBoxItem Content="Web Downloads"/>
+                            <ComboBoxItem Content="Microsoft Store"/>
+                        </ComboBox>
+
+                        <!-- Sort Options Button -->
+                        <Button x:Name="SortButton"
+                                Grid.Column="4"
+                                Width="36"
+                                Height="36"
+                                Padding="0"
+                                Margin="8,0,0,0"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center">
+                            <FontIcon Glyph="&#xE8CB;" FontSize="14" />
+                            <Button.Flyout>
+                                <MenuFlyout>
+                                    <RadioMenuFlyoutItem Text="Version (Newest First)" GroupName="SortGroup" IsChecked="True" Click="SortOption_Click"/>
+                                    <RadioMenuFlyoutItem Text="Version (Oldest First)" GroupName="SortGroup" Click="SortOption_Click"/>
+                                    <MenuFlyoutSeparator/>
+                                    <RadioMenuFlyoutItem Text="Release Date (Newest)" GroupName="SortGroup" Click="SortOption_Click"/>
+                                    <RadioMenuFlyoutItem Text="Release Date (Oldest)" GroupName="SortGroup" Click="SortOption_Click"/>
+                                </MenuFlyout>
+                            </Button.Flyout>
+                        </Button>
+                    </Grid>
+
+                    <!-- Success InfoBar -->
+                    <InfoBar x:Name="RefreshInfoBar"
+                             IsOpen="False"
+                             Title="Success"
+                             Message="Blender versions refreshed successfully."
+                             Severity="Success" />
+
+                    <!-- Separator -->
+                    <Border Height="1" Margin="0,12,0,0"
+                            Background="{ThemeResource DividerStrokeColorDefaultBrush}" />
+
+                    <Grid ColumnDefinitions="*, Auto">
+                        <TextBlock Text="Available Blender Versions"
+                                   FontSize="20" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"
+                                   AutomationProperties.HeadingLevel="Level2" />
+                    </Grid>
+
+                    <ListView x:Name="VersionsListView"
+                              SelectionMode="None"
+                              HorizontalAlignment="Stretch"
+                              Margin="-8,0">
+                        <ListView.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <ItemsStackPanel Orientation="Vertical" CacheLength="5"/>
+                            </ItemsPanelTemplate>
+                        </ListView.ItemsPanel>
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="Padding" Value="0"/>
+                                <Setter Property="MinHeight" Value="0"/>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="models:BlenderVersionGroup">
+                                <Border Margin="8" 
+                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="8" 
+                                        Padding="20"
+                                        HorizontalAlignment="Stretch">
+                                    <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="20">
+                                        <!-- Left: Icon -->
+                                        <Image Grid.Column="0"
+                                               Width="48" 
+                                               Height="48"
+                                               Margin="0,0,16,0"
+                                               Source="/Assets/blender_logo.png"/>
+
+                                        <!-- Center: Info -->
+                                        <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                                            <!-- Version with LATEST badge -->
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock Text="{x:Bind ShortVersion}" 
+                                                           FontSize="18" 
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                                                <Border Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                                        CornerRadius="4"
+                                                        Padding="6,2"
+                                                        Visibility="{x:Bind IsLatest}"
+                                                        VerticalAlignment="Center"
+                                                        HorizontalAlignment="Center">
+                                                    <TextBlock Text="LATEST" 
+                                                               FontSize="10"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                                                               VerticalAlignment="Center"
+                                                               HorizontalAlignment="Center"/>
+                                                </Border>
+                                            </StackPanel>
+
+                                            <!-- Release Date -->
+                                            <TextBlock Text="{x:Bind ReleaseDate}" 
+                                                       FontSize="12"
+                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                        </StackPanel>
+
+                                        <!-- Available installers count -->
+                                        <TextBlock Grid.Column="2" Text="{x:Bind InstallersCountText}" 
+                                                   FontSize="12"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+
+                                        <!-- Right: Download Button -->
+                                        <Button Grid.Column="3"
+                                                Click="DownloadButton_Click"
+                                                DataContext="{x:Bind}"
+                                                Style="{StaticResource AccentButtonStyle}"
+                                                MinWidth="160"
+                                                Height="36"
+                                                VerticalAlignment="Center"
+                                                HorizontalAlignment="Right">
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <FontIcon Glyph="&#xE896;" FontSize="14"/>
+                                                <TextBlock Text="Download"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Download Options Dialog -->
+        <ContentDialog x:Name="DownloadDialog"
+                       Title="Download Blender"
+                       PrimaryButtonText="Cancel"
+                       PrimaryButtonClick="DownloadDialog_PrimaryButtonClick"
+                       PrimaryButtonStyle="{StaticResource DefaultButtonStyle}"
+                       DefaultButton="Primary"
+                       MaxWidth="700"
+                       MinWidth="600"
+                       MaxHeight="600">
+            <ContentDialog.Resources>
+                <x:Double x:Key="ContentDialogMinWidth">600</x:Double>
+                <x:Double x:Key="ContentDialogMaxWidth">700</x:Double>
+                <x:Double x:Key="ContentDialogMaxHeight">600</x:Double>
+            </ContentDialog.Resources>
+            <Grid RowSpacing="8">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Header Row: Version + Filters + View Page Button -->
+                <Grid Grid.Row="0" ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- Version -->
+                    <TextBlock x:Name="DialogVersionText"
+                               Grid.Column="0"
+                               FontSize="16" 
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center"/>
+                    
+                    <!-- Platform Filter -->
+                    <ComboBox x:Name="DialogPlatformComboBox"
+                              Grid.Column="1"
+                              Width="140"
+                              SelectionChanged="DialogPlatformComboBox_SelectionChanged">
+                        <ComboBoxItem Content="Windows x64" Tag="windows-x64" IsSelected="True"/>
+                        <ComboBoxItem Content="ARM64" Tag="windows-arm64"/>
+                        <ComboBoxItem Content="x86" Tag="windows32"/>
+                        <ComboBoxItem Content="All" Tag="all"/>
+                    </ComboBox>
+                    
+                    <!-- Type Filter -->
+                    <ComboBox x:Name="DialogTypeComboBox"
+                              Grid.Column="2"
+                              Width="130"
+                              SelectionChanged="DialogTypeComboBox_SelectionChanged">
+                        <ComboBoxItem Content="All Types" Tag="all" IsSelected="True"/>
+                        <ComboBoxItem Content="MSI" Tag=".msi"/>
+                        <ComboBoxItem Content="MSIX" Tag=".msix"/>
+                        <ComboBoxItem Content="ZIP" Tag=".zip"/>
+                    </ComboBox>
+                    
+                    <!-- View Download Page Button -->
+                    <Button x:Name="DialogViewDownloadPage"
+                            Grid.Column="4"
+                            Click="DialogViewDownloadPage_Click"
+                            Style="{StaticResource DefaultButtonStyle}"
+                            Height="32"
+                            Padding="12,0"
+                            VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE71B;" FontSize="12"/>
+                            <TextBlock Text="View Download Page" FontSize="12"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
+                <!-- Available Installers Label -->
+                <TextBlock Grid.Row="1"
+                           Text="Available Installers"
+                           FontSize="13" 
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,0"/>
+
+                <!-- Installers List with ScrollViewer and padding to prevent overlap -->
+                <ScrollViewer Grid.Row="2" 
+                              VerticalScrollBarVisibility="Auto"
+                              MaxHeight="280"
+                              Padding="0,0,16,0">
+                    <ItemsControl x:Name="DialogInstallersList"
+                                  VerticalAlignment="Top">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Vertical"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="models:BlenderDownloadVersion">
+                                <Border Margin="0,3" 
+                                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="6" 
+                                        Padding="12,8">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Grid.Column="0" 
+                                                    Orientation="Horizontal" 
+                                                    Spacing="12"
+                                                    VerticalAlignment="Center">
+                                            <TextBlock Text="{x:Bind Version}" 
+                                                       FontSize="13"
+                                                       FontWeight="SemiBold"
+                                                       Width="100"/>
+                                            <TextBlock Text="{x:Bind Type}" 
+                                                       FontSize="12"
+                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                       Width="70"/>
+                                            <TextBlock FontSize="12"
+                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                                <Run Text="{x:Bind SizeBytes, Converter={StaticResource BytesToSizeConverter}}"/>
+                                                <Run Text=" • "/>
+                                                <Run Text="{x:Bind ReleaseDate}"/>
+                                            </TextBlock>
+                                        </StackPanel>
+                                        <Button Grid.Column="1"
+                                                Click="DialogInstallerDownload_Click"
+                                                DataContext="{x:Bind}"
+                                                Style="{StaticResource AccentButtonStyle}"
+                                                Height="28"
+                                                Padding="12,0"
+                                                VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <FontIcon Glyph="&#xE896;" FontSize="12"/>
+                                                <TextBlock Text="Download" FontSize="12"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <!-- Progress Section -->
+                <StackPanel Grid.Row="3" 
+                            x:Name="DialogProgressPanel"
+                            Spacing="6"
+                            Visibility="Collapsed">
+                    <ProgressBar x:Name="DialogProgressBar"
+                                 IsIndeterminate="False"
+                                 Value="0"
+                                 Maximum="100"/>
+                    <TextBlock x:Name="DialogProgressText"
+                               FontSize="12"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+            </Grid>
+        </ContentDialog>
+    </Grid>
+</Page>

@@ -1,0 +1,136 @@
+﻿<Page
+    x:Class="BlendHub.Views.BackupPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:BlendHub.Views"
+    xmlns:models="using:BlendHub.Models"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Padding="36,24,36,36">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState x:Name="WideState">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="800" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+                <VisualState x:Name="NarrowState">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="SourceGrid.ColumnDefinitions[1].Width" Value="0" />
+                        <Setter Target="SourceGrid.ColumnSpacing" Value="0" />
+                        <Setter Target="ItemsExpander.(Grid.Column)" Value="0" />
+                        <Setter Target="ItemsExpander.(Grid.Row)" Value="1" />
+                        <Setter Target="HeaderGrid.ColumnDefinitions[1].Width" Value="0" />
+                        <Setter Target="ActionPanel.(Grid.Row)" Value="1" />
+                        <Setter Target="ActionPanel.(Grid.Column)" Value="0" />
+                        <Setter Target="ActionPanel.HorizontalAlignment" Value="Left" />
+                        <Setter Target="ActionPanel.Margin" Value="0,16,0,0" />
+                        <Setter Target="StatusText.HorizontalAlignment" Value="Left" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid x:Name="HeaderGrid" Grid.Row="0" Margin="0,0,0,24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Row="0" Grid.Column="0" Spacing="4" VerticalAlignment="Center">
+                <TextBlock Text="Backup Blender Settings" FontSize="28" FontWeight="SemiBold" />
+                <TextBlock Text="Snapshot your blender configuration and addons." Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+            </StackPanel>
+            
+            <StackPanel x:Name="ActionPanel" Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="16" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <StackPanel VerticalAlignment="Center" Spacing="4">
+                    <TextBlock x:Name="StatusText" Text="" FontWeight="Medium" HorizontalAlignment="Right" FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <ProgressBar x:Name="BackupProgressBar" Value="0" Maximum="100" Height="4" MinWidth="120" IsIndeterminate="False" Opacity="0" />
+                </StackPanel>
+                <Button x:Name="StartBackupButton" Content="Start Backup" Style="{StaticResource AccentButtonStyle}" Padding="24,10" FontSize="14" FontWeight="Normal" Click="StartBackupButton_Click" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Main Content -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Stretch">
+            <StackPanel Spacing="16">
+
+                <!-- Destination Selection (Moved to top) -->
+                <Expander Header="Backup Destination" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" IsExpanded="True">
+                    <StackPanel Padding="20" Spacing="12" HorizontalAlignment="Stretch">
+                        <TextBlock Text="The location where your Blender backup files will be saved." Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="13" />
+                        <Grid ColumnDefinitions="*, Auto" ColumnSpacing="12" HorizontalAlignment="Stretch">
+                            <TextBox x:Name="DestinationTextBox" HorizontalAlignment="Stretch" TextChanged="DestinationTextBox_TextChanged" />
+                            <Button Grid.Column="1" Content="Browse..." Height="32" Padding="20,0" Click="BrowseButton_Click" />
+                        </Grid>
+                    </StackPanel>
+                </Expander>
+
+                <!-- Source Configuration -->
+                <Grid x:Name="SourceGrid" ColumnSpacing="16" RowSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Expander Grid.Row="0" Grid.Column="0" Header="Select Blender Version" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" HorizontalContentAlignment="Left" VerticalContentAlignment="Stretch" IsExpanded="True">
+                        <StackPanel Padding="20" Spacing="12">
+                           <Grid ColumnDefinitions="Auto, *, Auto" HorizontalAlignment="Stretch">
+                               <TextBlock Text="Target Version" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                               <Grid Grid.Column="1" />
+                               <ComboBox Grid.Column="2" x:Name="VersionComboBox" MinWidth="200" DisplayMemberPath="DisplayName" SelectionChanged="VersionComboBox_SelectionChanged" HorizontalAlignment="Right" />
+                           </Grid>
+                           <TextBlock x:Name="VersionPathText" FontSize="11" Foreground="{ThemeResource TextFillColorTertiaryBrush}" FontStyle="Italic" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Expander>
+
+                    <Expander x:Name="ItemsExpander" Grid.Row="0" Grid.Column="1" Header="Items to Include" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" HorizontalContentAlignment="Left" VerticalContentAlignment="Stretch" IsExpanded="True">
+                        <StackPanel Padding="12" Spacing="4">
+                            <ItemsControl x:Name="ItemsListView">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="3" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="models:ConfigItemViewModel">
+                                        <Grid MinWidth="140" Padding="4,2">
+                                            <CheckBox Content="{x:Bind Name}" IsChecked="{x:Bind IsEnabled, Mode=TwoWay}" VerticalAlignment="Center" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Expander>
+                </Grid>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- InfoBars at bottom -->
+        <StackPanel Grid.Row="2" Spacing="8" Margin="0,16,0,0">
+            <InfoBar x:Name="WarningInfoBar" IsOpen="False" IsClosable="True" Severity="Warning" Title="" Message="" />
+            <InfoBar x:Name="SuccessInfoBar" IsOpen="False" IsClosable="True" Severity="Success" Title="Backup Complete" Message="" />
+        </StackPanel>
+
+    </Grid>
+</Page>

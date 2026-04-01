@@ -1,0 +1,139 @@
+﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Navigation;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using Windows.Storage.Pickers;
+using BlendHub.Services;
+
+namespace BlendHub.Views
+{
+    public class BackupItemViewModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public bool IsEnabled { get; set; } = true;
+        public string RelativePath { get; set; } = string.Empty;
+        public bool IsFolder { get; set; }
+    }
+
+    public sealed partial class BackupPage : Page
+    {
+        private readonly BlenderSettingsService _blenderService = new();
+        private ObservableCollection<BackupItemViewModel> _backupItems = new();
+
+        public BackupPage()
+        {
+            this.InitializeComponent();
+            ItemsListView.ItemsSource = _backupItems;
+            LoadVersions();
+        }
+
+        public BackupPage()
+        {
+            this.InitializeComponent();
+            ItemsListView.ItemsSource = _backupItems;
+            LoadVersions();
+        }
+
+        private void LoadVersions()
+        {
+            var versions = _blenderService.GetInstalledVersions();
+            VersionComboBox.ItemsSource = versions;
+            if (versions.Count > 0)
+                VersionComboBox.SelectedIndex = 0;
+        }
+
+        private void VersionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (VersionComboBox.SelectedItem is BlenderVersionInfo info)
+            {
+                VersionPathText.Text = info.Path;
+                RefreshItems(info.Path);
+            }
+        }
+
+        private void RefreshItems(string versionPath)
+        {
+            _backupItems.Clear();
+            var items = _blenderService.GetDefaultBackupItems(versionPath);
+            foreach (var item in items)
+            {
+                _backupItems.Add(new BackupItemViewModel
+                {
+                    Name = item.Name,
+                    IsEnabled = item.IsEnabled,
+                    RelativePath = item.RelativePath,
+                    IsFolder = item.IsFolder
+                });
+            }
+        }
+
+        private async void BrowseButton_Click(object sender, RoutedEventArgs e)
+        {
+            var picker = new FolderPicker();
+            
+            // For WinUI 3, we need to associate the picker with the window handle
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+            WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+            picker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+            picker.FileTypeFilter.Add("*");
+
+            var folder = await picker.PickSingleFolderAsync();
+            if (folder != null)
+            {
+                DestinationTextBox.Text = folder.Path;
+            }
+        }
+
+        private async void StartBackupButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (VersionComboBox.SelectedItem is not BlenderVersionInfo info) return;
+            if (string.IsNullOrEmpty(DestinationTextBox.Text))
+            {
+                StatusText.Text = "Please select a destination folder.";
+                return;
+            }
+
+            StartBackupButton.IsEnabled = false;
+            BackupProgressBar.Opacity = 1;
+            BackupProgressBar.IsIndeterminate = true;
+
+            try
+            {
+                var items = _backupItems.Select(vm => new Services.BackupItem
+                {
+                    Name = vm.Name,
+                    IsEnabled = vm.IsEnabled,
+                    RelativePath = vm.RelativePath,
+                    IsFolder = vm.IsFolder
+                }).ToList();
+
+                await _blenderService.BackupAsync(info.Path, DestinationTextBox.Text, items, (msg, progress) =>
+                {
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        StatusText.Text = msg;
+                        BackupProgressBar.IsIndeterminate = false;
+                        BackupProgressBar.Value = progress * 100;
+                    });
+                });
+
+                StatusText.Text = "Backup completed successfully!";
+            }
+            catch (Exception ex)
+            {
+                StatusText.Text = $"Error: {ex.Message}";
+            }
+            finally
+            {
+                StartBackupButton.IsEnabled = true;
+                BackupProgressBar.Opacity = 0;
+            }
+        }
+    }
+}

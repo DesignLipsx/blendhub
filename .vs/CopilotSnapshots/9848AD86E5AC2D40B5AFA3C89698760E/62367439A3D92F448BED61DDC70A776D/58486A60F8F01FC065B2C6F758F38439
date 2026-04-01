@@ -1,0 +1,42 @@
+﻿using System;
+using System.Collections.Generic;
+
+namespace BlendHub.Models
+{
+    public class Project
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Path { get; set; } = string.Empty;
+        public string BlendFileName { get; set; } = string.Empty;
+        public List<string> Subfolders { get; set; } = new List<string>();
+        public string BlenderVersion { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        /// <summary>
+        /// Custom file launchers: maps file extension (e.g. ".psd") to executable path.
+        /// </summary>
+        public Dictionary<string, string> FileLaunchers { get; set; } = new Dictionary<string, string>();
+
+        /// <summary>
+        /// Manually-added project files (relative paths) that aren't auto-detected by launchers.
+        /// Opened with system defaults.
+        /// </summary>
+        public List<string> CustomFiles { get; set; } = new List<string>();
+
+        public string FullBlendPath => System.IO.Path.Combine(Path, BlendFileName.EndsWith(".blend") ? BlendFileName : BlendFileName + ".blend");
+        
+        [System.Text.Json.Serialization.JsonIgnore]
+        public bool FolderExists => System.IO.Directory.Exists(Path);
+
+        [System.Text.Json.Serialization.JsonIgnore]
+        public bool BlendFileExists => System.IO.File.Exists(FullBlendPath);
+
+        [System.Text.Json.Serialization.JsonIgnore]
+        public string StatusText => FolderExists ? "" : "⚠ Project folder not found";
+
+        // Static helpers for x:Bind function binding
+        public static double GetOpacity(bool exists) => exists ? 1.0 : 0.55;
+        public static Microsoft.UI.Xaml.Visibility GetMissingVisibility(bool exists) => 
+            exists ? Microsoft.UI.Xaml.Visibility.Collapsed : Microsoft.UI.Xaml.Visibility.Visible;
+    }
+}

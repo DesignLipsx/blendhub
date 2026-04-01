@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="BlendHub.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:BlendHub"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="BlendHub">
+
+    <Window.SystemBackdrop>
+        <MicaBackdrop />
+    </Window.SystemBackdrop>
+
+    <Grid x:Name="RootGrid">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- WinUI 3 Gallery-style TitleBar -->
+        <TitleBar
+            x:Name="AppTitleBar"
+            Title="BlendHub"
+            IsBackButtonVisible="False"
+            IsPaneToggleButtonVisible="True"
+            PaneToggleRequested="AppTitleBar_PaneToggleRequested">
+            <TitleBar.IconSource>
+                <ImageIconSource ImageSource="ms-appx:///Assets/logo.png" />
+            </TitleBar.IconSource>
+            <TitleBar.Content>
+                <Grid />
+            </TitleBar.Content>
+        </TitleBar>
+
+        <!-- NavigationView matching WinUI 3 Gallery layout -->
+        <NavigationView
+            x:Name="NavView"
+            Grid.Row="1"
+            Canvas.ZIndex="0"
+            PaneDisplayMode="Left"
+            IsBackButtonVisible="Collapsed"
+            IsBackEnabled="False"
+            IsPaneToggleButtonVisible="False"
+            IsSettingsVisible="True"
+            IsTabStop="False"
+            IsPaneOpen="False"
+            DisplayModeChanged="NavView_DisplayModeChanged"
+            SelectionChanged="NavView_SelectionChanged">
+
+            <NavigationView.MenuItems>
+                <NavigationViewItem x:Name="HomeItem" Content="Home" Icon="Home" Tag="home"
+                                    AutomationProperties.AutomationId="HomeItem" />
+                <NavigationViewItem x:Name="InstallItem" Content="Install Blender" Tag="install"
+                                    AutomationProperties.AutomationId="InstallItem">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE7B8;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItemSeparator />
+                <NavigationViewItemHeader Content="Tools" />
+                <NavigationViewItem x:Name="BackupItem" Content="Backup" Icon="SaveLocal" Tag="backup"
+                                    AutomationProperties.AutomationId="BackupItem" />
+                <NavigationViewItem x:Name="RestoreItem" Content="Restore" Tag="restore"
+                                    AutomationProperties.AutomationId="RestoreItem">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE777;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem x:Name="SyncItem" Content="Sync" Icon="Sync" Tag="sync"
+                                    AutomationProperties.AutomationId="SyncItem" />
+                <NavigationViewItemSeparator />
+                <NavigationViewItemHeader Content="Workspace" />
+                <NavigationViewItem x:Name="ProjectItem" Content="Projects" Tag="project"
+                                    AutomationProperties.AutomationId="ProjectItem">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xED43;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.MenuItems>
+
+            <Frame x:Name="ContentFrame"
+                   Navigated="ContentFrame_Navigated" />
+        </NavigationView>
+    </Grid>
+</Window>

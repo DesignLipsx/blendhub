@@ -1,0 +1,139 @@
+﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Threading.Tasks;
+using BlendHub.Services;
+
+namespace BlendHub.Views
+{
+    public class BlenderVersionViewModel
+    {
+        public string Version { get; set; } = string.Empty;
+        public string Path { get; set; } = string.Empty;
+        public string DisplayName => $"Blender {Version}";
+        public bool IsSelected { get; set; }
+    }
+
+    public sealed partial class SyncPage : Page
+    {
+        private readonly BlenderSettingsService _blenderService = new();
+        private ObservableCollection<BackupItemViewModel> _syncItems = new();
+        private ObservableCollection<BlenderVersionViewModel> _targetVersions = new();
+
+        public SyncPage()
+        {
+            this.InitializeComponent();
+            ItemsListView.ItemsSource = _syncItems;
+            TargetVersionsListView.ItemsSource = _targetVersions;
+            LoadVersions();
+        }
+
+        private void LoadVersions()
+        {
+            var versions = _blenderService.GetInstalledVersions();
+            SourceVersionComboBox.ItemsSource = versions;
+            if (versions.Count > 0)
+                SourceVersionComboBox.SelectedIndex = 0;
+        }
+
+        private void SourceVersionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (SourceVersionComboBox.SelectedItem is BlenderVersionInfo sourceInfo)
+            {
+                RefreshItems(sourceInfo.ConfigPath);
+                RefreshTargetVersions(sourceInfo.Version);
+            }
+        }
+
+        private void RefreshItems(string versionPath)
+        {
+            _syncItems.Clear();
+            var items = _blenderService.GetDefaultBackupItems(versionPath);
+            foreach (var item in items)
+            {
+                _syncItems.Add(new BackupItemViewModel
+                {
+                    Name = item.Name,
+                    IsEnabled = item.IsEnabled,
+                    RelativePath = item.RelativePath,
+                    IsFolder = item.IsFolder
+                });
+            }
+        }
+
+        private void RefreshTargetVersions(string sourceVersion)
+        {
+            _targetVersions.Clear();
+            var allVersions = _blenderService.GetInstalledVersions();
+            foreach (var v in allVersions)
+            {
+                if (v.Version != sourceVersion)
+                {
+                    _targetVersions.Add(new BlenderVersionViewModel
+                    {
+                        Version = v.Version,
+                        Path = v.Path,
+                        IsSelected = false
+                    });
+                }
+            }
+        }
+
+        private async void StartSyncButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (SourceVersionComboBox.SelectedItem is not BlenderVersionInfo sourceInfo) return;
+            var selectedTargets = _targetVersions.Where(v => v.IsSelected).ToList();
+            if (selectedTargets.Count == 0)
+            {
+                StatusText.Text = "Please select at least one target version.";
+                return;
+            }
+
+            StartSyncButton.IsEnabled = false;
+            SyncProgressBar.Opacity = 1;
+            SyncProgressBar.IsIndeterminate = true;
+
+            try
+            {
+                var items = _syncItems.Select(vm => new Services.BackupItem
+                {
+                    Name = vm.Name,
+                    IsEnabled = vm.IsEnabled,
+                    RelativePath = vm.RelativePath,
+                    IsFolder = vm.IsFolder
+                }).ToList();
+
+                int totalTargets = selectedTargets.Count;
+                int currentTarget = 0;
+
+                foreach (var target in selectedTargets)
+                {
+                    await _blenderService.SyncAsync(sourceInfo.ConfigPath, target.ConfigPath, items, (msg, progress) =>
+                    {
+                        DispatcherQueue.TryEnqueue(() =>
+                        {
+                            StatusText.Text = $"Syncing {target.DisplayName}: {msg}";
+                            SyncProgressBar.IsIndeterminate = false;
+                            SyncProgressBar.Value = ((double)currentTarget + progress) / totalTargets * 100;
+                        });
+                    });
+                    currentTarget++;
+                }
+
+                StatusText.Text = "Sync completed successfully!";
+            }
+            catch (Exception ex)
+            {
+                StatusText.Text = $"Error: {ex.Message}";
+            }
+            finally
+            {
+                StartSyncButton.IsEnabled = true;
+                SyncProgressBar.Opacity = 0;
+            }
+        }
+    }
+}

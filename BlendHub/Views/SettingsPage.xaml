@@ -1,0 +1,113 @@
+<Page
+    x:Class="BlendHub.Views.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:BlendHub.Views"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="Transparent">
+
+    <Grid Padding="0">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="36,24,36,36">
+            <StackPanel Spacing="24" HorizontalAlignment="Stretch">
+                <TextBlock Text="Settings" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,12" />
+
+                <!-- Appearance Section -->
+                <StackPanel Spacing="16">
+                    <TextBlock Text="Appearance" FontSize="18" FontWeight="Medium" />
+                    <Border Background="{ThemeResource LayerFillColorDefaultBrush}" 
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
+                            BorderThickness="1" CornerRadius="8" Padding="16">
+                        <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="16">
+                            <FontIcon Grid.Column="0" Glyph="&#xE790;" FontSize="20" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                                <TextBlock Text="App Theme" FontWeight="Medium" />
+                                <TextBlock Text="Choose which theme you want the app to use." Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="13" />
+                            </StackPanel>
+                            <ComboBox Grid.Column="2" x:Name="ThemeComboBox" Width="150" VerticalAlignment="Center" SelectionChanged="ThemeComboBox_SelectionChanged">
+                                <ComboBoxItem Content="Default" Tag="Default" />
+                                <ComboBoxItem Content="Light" Tag="Light" />
+                                <ComboBoxItem Content="Dark" Tag="Dark" />
+                            </ComboBox>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+                <!-- File Launchers Section -->
+                <StackPanel Spacing="16">
+                    <TextBlock Text="File Launchers" FontSize="18" FontWeight="Medium" />
+                    <TextBlock Text="Set default programs for file types. New projects will automatically use these associations. Leave the program path empty to use the system default application." 
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="13" TextWrapping="Wrap" />
+                    <Border Background="{ThemeResource LayerFillColorDefaultBrush}" 
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
+                            BorderThickness="1" CornerRadius="8" Padding="20">
+                        <StackPanel Spacing="12">
+                            <ItemsControl x:Name="LaunchersListControl">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,4" ColumnDefinitions="120, *, Auto, Auto">
+                                            <TextBox Text="{Binding Extension, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                                     PlaceholderText=".psd" 
+                                                     VerticalAlignment="Center" Grid.Column="0" Margin="0,0,8,0" />
+                                            <TextBox Text="{Binding ProgramPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                                     PlaceholderText="Select program..." 
+                                                     IsReadOnly="True"
+                                                     VerticalAlignment="Center" Grid.Column="1" />
+                                            <Button Click="BrowseLauncherProgram_Click" 
+                                                    Content="&#xED25;" 
+                                                    FontFamily="Segoe Fluent Icons" 
+                                                    VerticalAlignment="Center" Grid.Column="2" 
+                                                    Margin="4,0,0,0"
+                                                    ToolTipService.ToolTip="Browse Program" />
+                                            <Button Click="RemoveLauncher_Click" 
+                                                    Content="&#xE711;" 
+                                                    FontFamily="Segoe Fluent Icons" 
+                                                    VerticalAlignment="Center" Grid.Column="3" 
+                                                    Margin="4,0,0,0"
+                                                    Style="{StaticResource SubtleButtonStyle}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <Button Click="AddLauncher_Click" HorizontalAlignment="Stretch">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE710;" FontSize="12" />
+                                    <TextBlock Text="Add File Launcher" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- About Section -->
+                <StackPanel Spacing="16">
+                    <TextBlock Text="About" FontSize="18" FontWeight="Medium" />
+                    <Border Background="{ThemeResource LayerFillColorDefaultBrush}" 
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
+                            BorderThickness="1" CornerRadius="8" Padding="24">
+                        <StackPanel Spacing="16">
+                            <Image Source="ms-appx:///Assets/logo.png" Width="64" Height="64" HorizontalAlignment="Left" />
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="BlendHub" FontSize="20" FontWeight="Bold" />
+                                <TextBlock Text="Version 1.0.0" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
+                            <TextBlock Text="A modern utility designed to revolutionize how you manage your Blender configurations. Effortlessly backup, restore, and synchronize your creative workspace." 
+                                       TextWrapping="Wrap" HorizontalAlignment="Stretch" />
+                            <StackPanel Orientation="Horizontal" Spacing="24">
+                                <HyperlinkButton Content="Privacy Policy" Padding="0" />
+                                <HyperlinkButton Content="Terms of Service" Padding="0" />
+                                <HyperlinkButton Content="GitHub Repository" Padding="0" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <TextBlock Text="Developed with ❤️ for the Blender Community" 
+                           HorizontalAlignment="Center" Margin="0,48,0,0" 
+                           Foreground="{ThemeResource TextFillColorTertiaryBrush}" FontSize="12" />
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

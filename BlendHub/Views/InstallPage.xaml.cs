@@ -1,0 +1,419 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.Json;
+using System.Diagnostics;
+using System.Threading.Tasks;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Windows.Storage;
+using BlendHub.Models;
+using BlendHub.Services;
+using BlendHub.Helpers;
+
+namespace BlendHub.Views
+{
+    public sealed partial class InstallPage : Page
+    {
+        // Single source of truth - only loaded once
+        private IEnumerable<BlenderVersionGroup> _versionGroups = Enumerable.Empty<BlenderVersionGroup>();
+
+        // Cache installers per version to avoid re-parsing JSON
+        private readonly Dictionary<string, IEnumerable<BlenderDownloadVersion>> _installerCache = new();
+
+        // Store raw JSON data for lazy loading installers
+        private Dictionary<string, BlenderVersionJsonInfo>? _rawVersionData;
+
+        private BlenderVersionGroup? _selectedVersionGroup;
+        private string _currentSource = "web";
+        private bool _isLoadingVersions = false;
+        private string _currentSearchText = string.Empty;
+        private readonly DownloadService _downloadService = new();
+
+        public InstallPage()
+        {
+            this.InitializeComponent();
+            LoadVersions();
+        }
+
+        private async void LoadVersions()
+        {
+            if (_isLoadingVersions) return;
+            _isLoadingVersions = true;
+
+            try
+            {
+                _versionGroups = Enumerable.Empty<BlenderVersionGroup>();
+                _installerCache.Clear();
+
+                var jsonFileName = _currentSource == "web" ? "blender_versions_web.json" : "blender_versions_store.json";
+                var uri = new Uri($"ms-appx:///{jsonFileName}");
+                var file = await StorageFile.GetFileFromApplicationUriAsync(uri);
+                var jsonText = await FileIO.ReadTextAsync(file);
+
+                _rawVersionData = JsonSerializer.Deserialize<Dictionary<string, BlenderVersionJsonInfo>>(jsonText);
+
+                if (_rawVersionData != null)
+                {
+                    // Build version groups WITHOUT storing installers
+                    var versionGroupsBuilder = new Dictionary<string, (string fullVersion, string releaseDate, int installerCount)>();
+
+                    foreach (var versionEntry in _rawVersionData)
+                    {
+                        var versionInfo = versionEntry.Value;
+                        var installers = versionInfo.WindowsInstallers;
+
+                        if (installers != null && installers.Count > 0)
+                        {
+                            var fullVersion = VersionHelper.GetFullVersionFromFilename(installers[0].Filename);
+                            var shortVersion = VersionHelper.GetShortVersion(fullVersion);
+
+                            if (!versionGroupsBuilder.ContainsKey(shortVersion))
+                            {
+                                versionGroupsBuilder[shortVersion] = (
+                                    fullVersion,
+                                    installers[0].ReleaseDate,
+                                    installers.Count
+                                );
+                            }
+                        }
+                    }
+
+                    // Sort by version and create BlenderVersionGroup objects
+                    var sortedVersions = versionGroupsBuilder
+                        .OrderByDescending(kvp => VersionHelper.ParseVersion(kvp.Key))
+                        .Take(30);
+
+                    var groupsList = new List<BlenderVersionGroup>();
+                    bool isFirst = true;
+                    foreach (var kvp in sortedVersions)
+                    {
+                        var (fullVersion, releaseDate, installerCount) = kvp.Value;
+                        groupsList.Add(new BlenderVersionGroup
+                        {
+                            Version = fullVersion,
+                            ShortVersion = kvp.Key,
+                            ReleaseDate = releaseDate,
+                            IsLatest = isFirst ? Visibility.Visible : Visibility.Collapsed,
+                            InstallersCountText = $"{installerCount} installer{(installerCount > 1 ? "s" : "")} available"
+                        });
+                        isFirst = false;
+                    }
+
+                    _versionGroups = groupsList;
+                }
+
+                ApplySearchFilter();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"LoadVersions error: {ex.Message}");
+                LoadFallbackData();
+            }
+            finally
+            {
+                _isLoadingVersions = false;
+            }
+        }
+
+        private void ApplySearchFilter()
+        {
+            try
+            {
+                var searchText = SearchBox?.Text?.ToLower() ?? string.Empty;
+                _currentSearchText = searchText;
+
+                // Use deferred execution - don't materialize until needed
+                IEnumerable<BlenderVersionGroup> filtered = _versionGroups;
+
+                if (!string.IsNullOrEmpty(searchText))
+                {
+                    filtered = filtered.Where(v =>
+                        v.Version.ToLower().Contains(searchText) ||
+                        v.ReleaseDate.ToLower().Contains(searchText));
+                }
+
+                if (VersionsListView != null)
+                {
+                    VersionsListView.ItemsSource = filtered.ToList(); // Only materialize when binding
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"ApplySearchFilter error: {ex}");
+            }
+        }
+
+        private void LoadFallbackData()
+        {
+            var fallbackGroups = new List<BlenderVersionGroup>
+            {
+                new BlenderVersionGroup
+                {
+                    Version = "5.1.0",
+                    ShortVersion = "5.1",
+                    ReleaseDate = "17-Mar-2026 10:31",
+                    IsLatest = Visibility.Visible,
+                    InstallersCountText = "3 installers available"
+                },
+                new BlenderVersionGroup
+                {
+                    Version = "4.2.0 LTS",
+                    ShortVersion = "4.2 LTS",
+                    ReleaseDate = "16-Jul-2024 10:00",
+                    IsLatest = Visibility.Collapsed,
+                    InstallersCountText = "2 installers available"
+                }
+            };
+
+            _versionGroups = fallbackGroups;
+
+            // Pre-cache fallback installers
+            _installerCache["5.1"] = new[]
+            {
+                new BlenderDownloadVersion { Version = "5.1.0", ReleaseDate = "17-Mar-2026 10:31", Platform = "Windows x64", Type = "installer", Url = "https://download.blender.org/release/Blender5.1/blender-5.1.0-windows-x64.msi", SizeBytes = 449691648 },
+                new BlenderDownloadVersion { Version = "5.1.0", ReleaseDate = "17-Mar-2026 10:31", Platform = "Windows x64", Type = "portable", Url = "https://download.blender.org/release/Blender5.1/blender-5.1.0-windows-x64.zip", SizeBytes = 785208932 },
+                new BlenderDownloadVersion { Version = "5.1.0", ReleaseDate = "17-Mar-2026 10:31", Platform = "Windows x64", Type = "store", Url = "https://download.blender.org/release/Blender5.1/blender-5.1.0-windows-x64.msix", SizeBytes = 431952231 }
+            };
+
+            _installerCache["4.2 LTS"] = new[]
+            {
+                new BlenderDownloadVersion { Version = "4.2.0 LTS", ReleaseDate = "16-Jul-2024 10:00", Platform = "Windows x64", Type = "installer", Url = "https://download.blender.org/release/Blender4.2/blender-4.2.0-windows-x64.msi", SizeBytes = 380000000 },
+                new BlenderDownloadVersion { Version = "4.2.0 LTS", ReleaseDate = "16-Jul-2024 10:00", Platform = "Windows x64", Type = "portable", Url = "https://download.blender.org/release/Blender4.2/blender-4.2.0-windows-x64.zip", SizeBytes = 650000000 }
+            };
+
+            ApplySearchFilter();
+        }
+
+        private void SortVersions(string sortOption)
+        {
+            // Apply search filter first to get filtered list
+            var searchText = _currentSearchText;
+            IEnumerable<BlenderVersionGroup> sorted = _versionGroups;
+
+            if (!string.IsNullOrEmpty(searchText))
+            {
+                sorted = sorted.Where(v =>
+                    v.Version.ToLower().Contains(searchText) ||
+                    v.ReleaseDate.ToLower().Contains(searchText));
+            }
+
+            // Apply sort with deferred execution
+            sorted = sortOption switch
+            {
+                "Version (Newest First)" => sorted.OrderByDescending(v => VersionHelper.ParseVersion(v.ShortVersion)),
+                "Version (Oldest First)" => sorted.OrderBy(v => VersionHelper.ParseVersion(v.ShortVersion)),
+                "Release Date (Newest)" => sorted.OrderByDescending(v => v.ReleaseDate),
+                "Release Date (Oldest)" => sorted.OrderBy(v => v.ReleaseDate),
+                _ => sorted
+            };
+
+            VersionsListView.ItemsSource = sorted.ToList(); // Only materialize when binding
+        }
+
+        private void SearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+        {
+            if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
+            {
+                ApplySearchFilter();
+            }
+        }
+
+        private void RefreshButton_Click(object sender, RoutedEventArgs e)
+        {
+            LoadVersions();
+            RefreshInfoBar.IsOpen = true;
+        }
+
+        private void SortOption_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is RadioMenuFlyoutItem item)
+            {
+                var sortOption = item.Text;
+                SortVersions(sortOption);
+            }
+        }
+
+        private void SourceComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            _currentSource = SourceComboBox.SelectedIndex == 0 ? "web" : "store";
+            LoadVersions();
+        }
+
+        private void DialogViewDownloadPage_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedVersionGroup == null) return;
+
+            // Build version URL (e.g., https://download.blender.org/release/Blender5.1/)
+            var versionClean = _selectedVersionGroup.Version.Replace("LTS", "").Trim();
+            var versionUrl = $"https://download.blender.org/release/Blender{versionClean}/";
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = versionUrl,
+                UseShellExecute = true
+            });
+        }
+
+        private IEnumerable<BlenderDownloadVersion> GetInstallers(BlenderVersionGroup group)
+        {
+            // Return cached installers if available
+            if (_installerCache.TryGetValue(group.ShortVersion, out var cached))
+            {
+                return cached;
+            }
+
+            // Lazy load installers from raw data
+            if (_rawVersionData == null)
+                return Enumerable.Empty<BlenderDownloadVersion>();
+
+            var installers = new List<BlenderDownloadVersion>();
+
+            foreach (var versionEntry in _rawVersionData)
+            {
+                var versionInfo = versionEntry.Value;
+                if (versionInfo.WindowsInstallers != null)
+                {
+                    foreach (var installer in versionInfo.WindowsInstallers)
+                    {
+                        var fullVersion = VersionHelper.GetFullVersionFromFilename(installer.Filename);
+                        var shortVersion = VersionHelper.GetShortVersion(fullVersion);
+
+                        if (shortVersion == group.ShortVersion)
+                        {
+                            installers.Add(new BlenderDownloadVersion
+                            {
+                                Version = fullVersion,
+                                ReleaseDate = installer.ReleaseDate,
+                                Platform = FileTypeHelper.GetPlatformFromFilename(installer.Filename),
+                                Type = FileTypeHelper.GetTypeFromFilename(installer.Filename),
+                                Url = installer.Url,
+                                SizeBytes = installer.SizeBytes
+                            });
+                        }
+                    }
+                }
+            }
+
+            // Cache for future access
+            _installerCache[group.ShortVersion] = installers;
+            return installers;
+        }
+
+        private async void DownloadButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.DataContext is BlenderVersionGroup group)
+            {
+                _selectedVersionGroup = group;
+                DialogVersionText.Text = $"Blender {group.Version}";
+
+                // Reset filters
+                DialogPlatformComboBox.SelectedIndex = 0;
+                DialogTypeComboBox.SelectedIndex = 0;
+
+                // Show filtered installers (lazy-loaded)
+                UpdateDialogInstallersList();
+
+                // Hide progress
+                DialogProgressPanel.Visibility = Visibility.Collapsed;
+
+                // Show dialog
+                DownloadDialog.XamlRoot = this.XamlRoot;
+                await DownloadDialog.ShowAsync();
+            }
+        }
+
+        private void UpdateDialogInstallersList()
+        {
+            if (_selectedVersionGroup == null) return;
+
+            var platformFilter = (DialogPlatformComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "all";
+            var typeFilter = (DialogTypeComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "all";
+
+            // Get lazy-loaded installers
+            var filtered = GetInstallers(_selectedVersionGroup);
+
+            // Apply platform filter
+            if (platformFilter != "all")
+            {
+                filtered = filtered.Where(i =>
+                    platformFilter == "windows-x64" ? i.Platform.Contains("x64") :
+                    platformFilter == "windows-arm64" ? i.Platform.Contains("ARM64") :
+                    platformFilter == "windows32" ? i.Platform.Contains("x86") :
+                    true);
+            }
+
+            // Apply type filter
+            if (typeFilter != "all")
+            {
+                filtered = filtered.Where(i => i.Url.ToLower().EndsWith(typeFilter));
+            }
+
+            var filteredList = filtered.ToList(); // Only materialize when binding
+            DialogInstallersList.ItemsSource = filteredList;
+
+            // Show/hide "no installers found" message
+            if (DialogNoInstallersMessage != null)
+            {
+                DialogNoInstallersMessage.Visibility = filteredList.Count == 0
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+            }
+        }
+
+        private void DialogPlatformComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            UpdateDialogInstallersList();
+        }
+
+        private void DialogTypeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            UpdateDialogInstallersList();
+        }
+
+        private void DownloadDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+        {
+            // Cancel button clicked - dialog will close automatically
+        }
+
+        private async void DialogInstallerDownload_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.DataContext is BlenderDownloadVersion installer)
+            {
+                // Show progress panel
+                DialogProgressPanel.Visibility = Visibility.Visible;
+                DialogProgressBar.Value = 0;
+                DialogProgressText.Text = $"Preparing to download...";
+
+                _downloadService.ProgressChanged += OnDownloadProgress;
+                _downloadService.DownloadFailed += OnDownloadFailed;
+                _downloadService.DownloadCompleted += OnDownloadCompleted;
+
+                await _downloadService.DownloadFileAsync(installer);
+            }
+        }
+
+        private void OnDownloadProgress(object? sender, DownloadProgressEventArgs e)
+        {
+            DialogProgressBar.Value = e.Progress;
+            DialogProgressText.Text = e.Message;
+        }
+
+        private void OnDownloadCompleted(object? sender, DownloadCompletedEventArgs e)
+        {
+            DialogProgressText.Text = "Download complete!";
+            _downloadService.ProgressChanged -= OnDownloadProgress;
+            _downloadService.DownloadFailed -= OnDownloadFailed;
+            _downloadService.DownloadCompleted -= OnDownloadCompleted;
+        }
+
+        private void OnDownloadFailed(object? sender, DownloadErrorEventArgs e)
+        {
+            DialogProgressText.Text = $"Download failed: {e.Exception?.Message}";
+            _downloadService.ProgressChanged -= OnDownloadProgress;
+            _downloadService.DownloadFailed -= OnDownloadFailed;
+            _downloadService.DownloadCompleted -= OnDownloadCompleted;
+        }
+    }
+}

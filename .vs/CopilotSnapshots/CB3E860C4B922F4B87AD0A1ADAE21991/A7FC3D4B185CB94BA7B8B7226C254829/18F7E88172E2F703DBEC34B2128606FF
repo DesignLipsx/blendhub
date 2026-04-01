@@ -1,0 +1,188 @@
+﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Threading.Tasks;
+using BlendHub.Services;
+
+namespace BlendHub.Views
+{
+    public sealed partial class SyncPage : Page
+    {
+        private BackupService _backupService;
+        private ObservableCollection<BackupItem> _syncItems;
+
+        public SyncPage()
+        {
+            this.InitializeComponent();
+            _backupService = new BackupService();
+            _backupService.ProgressChanged += OnSyncProgressChanged;
+            _syncItems = new ObservableCollection<BackupItem>();
+            SyncItemsControl.ItemsSource = _syncItems;
+            LoadBlenderVersions();
+        }
+
+        private void LoadBlenderVersions()
+        {
+            // Load sync items for source version
+            var items = _backupService.GetAvailableBackupItems();
+            _syncItems.Clear();
+            foreach (var item in items)
+            {
+                _syncItems.Add(item);
+            }
+
+            SourceVersionCombo.ItemsSource = new List<string> { "Current Version" };
+            SourceVersionCombo.SelectedIndex = 0;
+
+            // Load available target versions
+            var targetVersions = GetInstalledBlenderVersions();
+            TargetVersionCombo.ItemsSource = targetVersions;
+            if (targetVersions.Any())
+            {
+                TargetVersionCombo.SelectedIndex = 0;
+            }
+
+            UpdateSummary();
+        }
+
+        private List<string> GetInstalledBlenderVersions()
+        {
+            // This would normally scan the system for installed Blender versions
+            // For now, return an empty list as a placeholder
+            try
+            {
+                string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                string blenderPath = System.IO.Path.Combine(appDataPath, "Blender Foundation", "Blender");
+                
+                var versions = new List<string>();
+                if (System.IO.Directory.Exists(blenderPath))
+                {
+                    var dirs = System.IO.Directory.GetDirectories(blenderPath)
+                        .Select(d => System.IO.Path.GetFileName(d))
+                        .OrderByDescending(x => x)
+                        .ToList();
+                    
+                    // Exclude current version
+                    var currentVersion = dirs.FirstOrDefault();
+                    versions.AddRange(dirs.Skip(1));
+                }
+                
+                return versions;
+            }
+            catch
+            {
+                return new List<string>();
+            }
+        }
+
+        private void OnTargetVersionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            UpdateSummary();
+        }
+
+        private async void OnSyncClick(object sender, RoutedEventArgs e)
+        {
+            if (TargetVersionCombo.SelectedItem is not string targetVersion)
+            {
+                ShowErrorMessage("Please select a target Blender version");
+                return;
+            }
+
+            var selectedItems = _syncItems.Where(x => x.IsSelected).ToList();
+            if (!selectedItems.Any())
+            {
+                ShowErrorMessage("Please select at least one item to sync");
+                return;
+            }
+
+            // Confirmation dialog
+            ContentDialog confirmDialog = new ContentDialog()
+            {
+                Title = "Confirm Sync",
+                Content = $"This will sync settings to Blender version {targetVersion}. Settings will be overwritten. Continue?",
+                PrimaryButtonText = "Yes, Sync",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await confirmDialog.ShowAsync();
+            if (result != ContentDialogResult.Primary)
+                return;
+
+            SyncButton.IsEnabled = false;
+            ProgressStackPanel.Visibility = Visibility.Visible;
+            SyncProgressBar.Value = 0;
+
+            try
+            {
+                bool success = await _backupService.SyncAsync(selectedItems, targetVersion);
+                if (success)
+                {
+                    ShowSuccessMessage($"Successfully synced to Blender {targetVersion}!");
+                }
+                else
+                {
+                    ShowErrorMessage("Sync failed. Please check the logs.");
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowErrorMessage($"Sync error: {ex.Message}");
+            }
+            finally
+            {
+                SyncButton.IsEnabled = true;
+                ProgressStackPanel.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void OnSyncProgressChanged(object sender, BackupProgress progress)
+        {
+            DispatcherQueue.GetForCurrentThread().TryEnqueue(() =>
+            {
+                SyncProgressBar.Value = progress.ProgressPercentage;
+                ProgressTextBlock.Text = $"Processing {progress.CurrentFile}... ({progress.FilesProcessed}/{progress.TotalFiles})";
+            });
+        }
+
+        private void UpdateSummary()
+        {
+            var selectedItems = _syncItems.Where(x => x.IsSelected).ToList();
+            long totalSize = selectedItems.Sum(x => x.SizeBytes);
+            
+            TotalSizeTextBlock.Text = FormatBytes(totalSize);
+            SelectedItemsTextBlock.Text = selectedItems.Count.ToString();
+        }
+
+        private string FormatBytes(long bytes)
+        {
+            string[] sizes = { "B", "KB", "MB", "GB" };
+            double len = bytes;
+            int order = 0;
+            while (len >= 1024 && order < sizes.Length - 1)
+            {
+                order++;
+                len = len / 1024;
+            }
+            return $"{len:0.##} {sizes[order]}";
+        }
+
+        private void ShowErrorMessage(string message)
+        {
+            StatusTextBlock.Text = message;
+            StatusTextBlock.Foreground = (Microsoft.UI.Colors.Red).ToColor();
+            StatusTextBlock.Visibility = Visibility.Visible;
+        }
+
+        private void ShowSuccessMessage(string message)
+        {
+            StatusTextBlock.Text = message;
+            StatusTextBlock.Foreground = (Microsoft.UI.Colors.Green).ToColor();
+            StatusTextBlock.Visibility = Visibility.Visible;
+        }
+    }
+}

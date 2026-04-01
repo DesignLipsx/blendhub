@@ -1,0 +1,59 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="BlendHub.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:BlendHub"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="BlendHub">
+
+    <Window.SystemBackdrop>
+        <MicaBackdrop />
+    </Window.SystemBackdrop>
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Modern WinUI Title Bar -->
+        <Grid x:Name="TitleBar" Grid.Row="0" Height="48">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Logo and Title -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0" Spacing="8">
+                <Image
+                    Source="ms-appx:///Assets/logo.png"
+                    Width="28"
+                    Height="28" />
+                <TextBlock
+                    Text="BlendHub"
+                    FontSize="16"
+                    FontWeight="SemiBold"
+                    VerticalAlignment="Center" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Navigation View with Side Navigation -->
+        <NavigationView
+            x:Name="NavView"
+            Grid.Row="1"
+            PaneDisplayMode="Left"
+            IsPaneOpen="False"
+            IsBackButtonVisible="Collapsed"
+            IsSettingsVisible="False"
+            SelectionChanged="NavView_SelectionChanged">
+            <NavigationView.MenuItems>
+                <NavigationViewItem x:Name="HomeItem" Content="Homepage" Icon="Home" Tag="home" />
+                <NavigationViewItem x:Name="BackupItem" Content="Backup" Icon="SaveLocal" Tag="backup" />
+                <NavigationViewItem x:Name="RestoreItem" Content="Restore" Icon="Download" Tag="restore" />
+                <NavigationViewItem x:Name="SyncItem" Content="Sync" Icon="SyncFolder" Tag="sync" />
+                <NavigationViewItem x:Name="ProjectItem" Content="Project" Icon="OpenFile" Tag="project" />
+            </NavigationView.MenuItems>
+
+            <!-- Main Content -->
+            <Frame x:Name="ContentFrame" />
+        </NavigationView>
+    </Grid>
+</Window>

@@ -1,0 +1,153 @@
+﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Threading.Tasks;
+using BlendHub.Services;
+using Windows.Storage.Pickers;
+using Windows.Storage;
+
+namespace BlendHub.Views
+{
+    public sealed partial class BackupPage : Page
+    {
+        private BackupService _backupService;
+        private ObservableCollection<BackupItem> _backupItems;
+        private string _selectedBackupPath;
+
+        public BackupPage()
+        {
+            this.InitializeComponent();
+            _backupService = new BackupService();
+            _backupService.ProgressChanged += OnBackupProgressChanged;
+            _backupItems = new ObservableCollection<BackupItem>();
+            LoadBackupItems();
+        }
+
+        private void LoadBackupItems()
+        {
+            var items = _backupService.GetAvailableBackupItems();
+            _backupItems.Clear();
+            foreach (var item in items)
+            {
+                _backupItems.Add(item);
+            }
+            BackupItemsControl.ItemsSource = _backupItems;
+            UpdateSummary();
+        }
+
+        private async void OnBrowseBackupPath(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var folderPicker = new FolderPicker();
+                folderPicker.FileTypeFilter.Add("*");
+                folderPicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+
+                var nativeWindow = (Application.Current as App).MainWindow;
+                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(nativeWindow);
+                WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
+
+                StorageFolder folder = await folderPicker.PickSingleFolderAsync();
+                if (folder != null)
+                {
+                    _selectedBackupPath = folder.Path;
+                    BackupPathTextBox.Text = _selectedBackupPath;
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowErrorMessage($"Error selecting folder: {ex.Message}");
+            }
+        }
+
+        private async void OnBackupClick(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(_selectedBackupPath))
+            {
+                ShowErrorMessage("Please select a backup directory");
+                return;
+            }
+
+            var selectedItems = _backupItems.Where(x => x.IsSelected).ToList();
+            if (!selectedItems.Any())
+            {
+                ShowErrorMessage("Please select at least one item to backup");
+                return;
+            }
+
+            BackupButton.IsEnabled = false;
+            ProgressStackPanel.Visibility = Visibility.Visible;
+            BackupProgressBar.Value = 0;
+
+            try
+            {
+                bool success = await _backupService.BackupAsync(selectedItems, _selectedBackupPath);
+                if (success)
+                {
+                    ShowSuccessMessage("Backup completed successfully!");
+                }
+                else
+                {
+                    ShowErrorMessage("Backup failed. Please check the logs.");
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowErrorMessage($"Backup error: {ex.Message}");
+            }
+            finally
+            {
+                BackupButton.IsEnabled = true;
+                ProgressStackPanel.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void OnBackupProgressChanged(object sender, BackupProgress progress)
+        {
+            DispatcherQueue.GetForCurrentThread().TryEnqueue(() =>
+            {
+                BackupProgressBar.Value = progress.ProgressPercentage;
+                ProgressTextBlock.Text = $"Processing {progress.CurrentFile}... ({progress.FilesProcessed}/{progress.TotalFiles})";
+            });
+        }
+
+        private void UpdateSummary()
+        {
+            var selectedItems = _backupItems.Where(x => x.IsSelected).ToList();
+            long totalSize = selectedItems.Sum(x => x.SizeBytes);
+            
+            TotalSizeTextBlock.Text = FormatBytes(totalSize);
+            SelectedItemsTextBlock.Text = selectedItems.Count.ToString();
+        }
+
+        private string FormatBytes(long bytes)
+        {
+            string[] sizes = { "B", "KB", "MB", "GB" };
+            double len = bytes;
+            int order = 0;
+            while (len >= 1024 && order < sizes.Length - 1)
+            {
+                order++;
+                len = len / 1024;
+            }
+            return $"{len:0.##} {sizes[order]}";
+        }
+
+        private void ShowErrorMessage(string message)
+        {
+            StatusTextBlock.Text = message;
+            StatusTextBlock.Foreground = (Windows.UI.Color)(Windows.UI.Colors.Red);
+            StatusTextBlock.Visibility = Visibility.Visible;
+        }
+
+        private void ShowSuccessMessage(string message)
+        {
+            StatusTextBlock.Text = message;
+            StatusTextBlock.Foreground = (Microsoft.UI.Colors.Green).ToColor();
+            StatusTextBlock.Visibility = Visibility.Visible;
+        }
+    }
+}

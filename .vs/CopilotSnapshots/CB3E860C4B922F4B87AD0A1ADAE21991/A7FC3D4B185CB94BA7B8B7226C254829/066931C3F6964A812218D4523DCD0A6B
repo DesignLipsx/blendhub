@@ -1,0 +1,483 @@
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Text.Json;
+
+namespace BlendHub.Services
+{
+    public class BackupItem
+    {
+        public string Name { get; set; }
+        public bool IsSelected { get; set; }
+        public string Path { get; set; }
+        public long SizeBytes { get; set; }
+
+        public string SizeDisplay => FormatBytes(SizeBytes);
+
+        private static string FormatBytes(long bytes)
+        {
+            string[] sizes = { "B", "KB", "MB", "GB" };
+            double len = bytes;
+            int order = 0;
+            while (len >= 1024 && order < sizes.Length - 1)
+            {
+                order++;
+                len = len / 1024;
+            }
+            return $"{len:0.##} {sizes[order]}";
+        }
+    }
+
+    public class BackupVersion
+    {
+        public string Name { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public long TotalSizeBytes { get; set; }
+        public string Path { get; set; }
+
+        public string SizeDisplay => FormatBytes(TotalSizeBytes);
+
+        private static string FormatBytes(long bytes)
+        {
+            string[] sizes = { "B", "KB", "MB", "GB" };
+            double len = bytes;
+            int order = 0;
+            while (len >= 1024 && order < sizes.Length - 1)
+            {
+                order++;
+                len = len / 1024;
+            }
+            return $"{len:0.##} {sizes[order]}";
+        }
+    }
+
+    public class BackupProgress
+    {
+        public int TotalFiles { get; set; }
+        public int FilesProcessed { get; set; }
+        public string CurrentFile { get; set; }
+        public string Status { get; set; }
+        public double ProgressPercentage => TotalFiles > 0 ? (FilesProcessed * 100.0) / TotalFiles : 0;
+    }
+
+    public class BackupService
+    {
+        private const string SYNC_FOLDER_NAME = "BlendHub Backups";
+        private const string IGNORED_FOLDERS = "__pycache__|.cache|.git|.svn|.idea|.vscode";
+        private bool _isOperationRunning = false;
+
+        public event EventHandler<BackupProgress> ProgressChanged;
+
+        public BackupService()
+        {
+        }
+
+        /// <summary>
+        /// Get available backup items for the current Blender installation
+        /// </summary>
+        public List<BackupItem> GetAvailableBackupItems()
+        {
+            var items = new List<BackupItem>();
+            string configPath = GetBlenderConfigPath();
+
+            if (string.IsNullOrEmpty(configPath))
+                return items;
+
+            // Config files
+            var configFiles = new[]
+            {
+                ("Bookmarks", Path.Combine(configPath, "bookmarks.txt")),
+                ("Platform Support", Path.Combine(configPath, "platform_support.txt")),
+                ("Recent Files", Path.Combine(configPath, "recent-files.txt")),
+                ("Recent Searches", Path.Combine(configPath, "recent-searches.txt")),
+                ("Startup File", Path.Combine(configPath, "startup.blend")),
+                ("Preferences", Path.Combine(configPath, "userpref.blend")),
+            };
+
+            foreach (var (name, path) in configFiles)
+            {
+                if (File.Exists(path))
+                {
+                    var fileInfo = new FileInfo(path);
+                    items.Add(new BackupItem
+                    {
+                        Name = name,
+                        Path = path,
+                        SizeBytes = fileInfo.Length,
+                        IsSelected = true
+                    });
+                }
+            }
+
+            // Folders
+            string blenderBase = Path.GetDirectoryName(Path.GetDirectoryName(configPath));
+            var folders = new[]
+            {
+                ("Addons", Path.Combine(blenderBase, "scripts", "addons")),
+                ("Presets", Path.Combine(blenderBase, "scripts", "presets")),
+                ("Extensions", Path.Combine(blenderBase, "extensions")),
+            };
+
+            foreach (var (name, path) in folders)
+            {
+                if (Directory.Exists(path))
+                {
+                    long size = GetDirectorySize(path);
+                    items.Add(new BackupItem
+                    {
+                        Name = name,
+                        Path = path,
+                        SizeBytes = size,
+                        IsSelected = true
+                    });
+                }
+            }
+
+            return items;
+        }
+
+        /// <summary>
+        /// Perform backup operation
+        /// </summary>
+        public async Task<bool> BackupAsync(List<BackupItem> selectedItems, string backupDirectory)
+        {
+            if (_isOperationRunning)
+                return false;
+
+            _isOperationRunning = true;
+
+            try
+            {
+                string versionName = $"Backup_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}";
+                string backupPath = Path.Combine(backupDirectory, SYNC_FOLDER_NAME, versionName);
+                Directory.CreateDirectory(backupPath);
+
+                int totalFiles = CountTotalFiles(selectedItems);
+                int filesProcessed = 0;
+
+                foreach (var item in selectedItems.Where(x => x.IsSelected))
+                {
+                    if (Directory.Exists(item.Path))
+                    {
+                        await CopyDirectoryAsync(item.Path, 
+                            Path.Combine(backupPath, item.Name), 
+                            ref filesProcessed, totalFiles, item.Name);
+                    }
+                    else if (File.Exists(item.Path))
+                    {
+                        var destDir = Path.Combine(backupPath, "config");
+                        Directory.CreateDirectory(destDir);
+                        string destFile = Path.Combine(destDir, Path.GetFileName(item.Path));
+                        await Task.Run(() => File.Copy(item.Path, destFile, true));
+                        filesProcessed++;
+                        RaiseProgressChanged(totalFiles, filesProcessed, item.Name);
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Backup failed: {ex.Message}");
+                return false;
+            }
+            finally
+            {
+                _isOperationRunning = false;
+            }
+        }
+
+        /// <summary>
+        /// Get list of available backups
+        /// </summary>
+        public List<BackupVersion> GetAvailableBackups(string backupDirectory)
+        {
+            var backups = new List<BackupVersion>();
+            string syncPath = Path.Combine(backupDirectory, SYNC_FOLDER_NAME);
+
+            if (!Directory.Exists(syncPath))
+                return backups;
+
+            foreach (var versionDir in Directory.GetDirectories(syncPath))
+            {
+                var dirInfo = new DirectoryInfo(versionDir);
+                long totalSize = GetDirectorySize(versionDir);
+
+                backups.Add(new BackupVersion
+                {
+                    Name = Path.GetFileName(versionDir),
+                    CreatedDate = dirInfo.CreationTime,
+                    TotalSizeBytes = totalSize,
+                    Path = versionDir
+                });
+            }
+
+            return backups.OrderByDescending(x => x.CreatedDate).ToList();
+        }
+
+        /// <summary>
+        /// Perform restore operation
+        /// </summary>
+        public async Task<bool> RestoreAsync(BackupVersion backup, List<BackupItem> selectedItems)
+        {
+            if (_isOperationRunning)
+                return false;
+
+            _isOperationRunning = true;
+
+            try
+            {
+                string configPath = GetBlenderConfigPath();
+                string blenderBase = Path.GetDirectoryName(Path.GetDirectoryName(configPath));
+
+                int totalFiles = CountBackupFiles(backup.Path, selectedItems);
+                int filesProcessed = 0;
+
+                foreach (var item in selectedItems.Where(x => x.IsSelected))
+                {
+                    string sourcePath = Path.Combine(backup.Path, item.Name);
+
+                    if (Directory.Exists(sourcePath))
+                    {
+                        string destPath = GetRestorePath(item.Name, configPath, blenderBase);
+                        if (Directory.Exists(destPath))
+                        {
+                            Directory.Delete(destPath, true);
+                        }
+                        await CopyDirectoryAsync(sourcePath, destPath, 
+                            ref filesProcessed, totalFiles, item.Name);
+                    }
+                    else if (item.Name.Contains("config"))
+                    {
+                        string sourceConfigPath = Path.Combine(backup.Path, "config");
+                        if (Directory.Exists(sourceConfigPath))
+                        {
+                            await CopyDirectoryAsync(sourceConfigPath, configPath,
+                                ref filesProcessed, totalFiles, item.Name);
+                        }
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Restore failed: {ex.Message}");
+                return false;
+            }
+            finally
+            {
+                _isOperationRunning = false;
+            }
+        }
+
+        /// <summary>
+        /// Sync settings to another Blender version
+        /// </summary>
+        public async Task<bool> SyncAsync(List<BackupItem> selectedItems, string targetBlenderVersion)
+        {
+            if (_isOperationRunning)
+                return false;
+
+            _isOperationRunning = true;
+
+            try
+            {
+                string sourceConfigPath = GetBlenderConfigPath();
+                string targetConfigPath = GetBlenderConfigPathForVersion(targetBlenderVersion);
+
+                if (string.IsNullOrEmpty(targetConfigPath))
+                    return false;
+
+                int totalFiles = CountTotalFiles(selectedItems);
+                int filesProcessed = 0;
+
+                foreach (var item in selectedItems.Where(x => x.IsSelected))
+                {
+                    if (Directory.Exists(item.Path))
+                    {
+                        string destPath = Path.Combine(
+                            Path.GetDirectoryName(Path.GetDirectoryName(targetConfigPath)),
+                            item.Name);
+                        
+                        if (Directory.Exists(destPath))
+                        {
+                            Directory.Delete(destPath, true);
+                        }
+                        
+                        await CopyDirectoryAsync(item.Path, destPath,
+                            ref filesProcessed, totalFiles, item.Name);
+                    }
+                    else if (File.Exists(item.Path))
+                    {
+                        string destFile = Path.Combine(targetConfigPath, Path.GetFileName(item.Path));
+                        await Task.Run(() => File.Copy(item.Path, destFile, true));
+                        filesProcessed++;
+                        RaiseProgressChanged(totalFiles, filesProcessed, item.Name);
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Sync failed: {ex.Message}");
+                return false;
+            }
+            finally
+            {
+                _isOperationRunning = false;
+            }
+        }
+
+        /// <summary>
+        /// Delete a backup version
+        /// </summary>
+        public bool DeleteBackup(BackupVersion backup)
+        {
+            try
+            {
+                if (Directory.Exists(backup.Path))
+                {
+                    Directory.Delete(backup.Path, true);
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Delete failed: {ex.Message}");
+                return false;
+            }
+        }
+
+        private string GetBlenderConfigPath()
+        {
+            try
+            {
+                string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                string blenderPath = Path.Combine(appDataPath, "Blender Foundation", "Blender");
+                
+                if (Directory.Exists(blenderPath))
+                {
+                    var versions = Directory.GetDirectories(blenderPath)
+                        .OrderByDescending(x => x)
+                        .FirstOrDefault();
+
+                    if (versions != null)
+                    {
+                        string configPath = Path.Combine(versions, "config");
+                        if (Directory.Exists(configPath))
+                            return configPath;
+                    }
+                }
+                return null;
+            }
+            catch { return null; }
+        }
+
+        private string GetBlenderConfigPathForVersion(string version)
+        {
+            try
+            {
+                string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                string blenderPath = Path.Combine(appDataPath, "Blender Foundation", "Blender", version);
+                string configPath = Path.Combine(blenderPath, "config");
+                
+                if (Directory.Exists(configPath))
+                    return configPath;
+                
+                return null;
+            }
+            catch { return null; }
+        }
+
+        private string GetRestorePath(string itemName, string configPath, string blenderBase)
+        {
+            return itemName switch
+            {
+                "Addons" => Path.Combine(blenderBase, "scripts", "addons"),
+                "Presets" => Path.Combine(blenderBase, "scripts", "presets"),
+                "Extensions" => Path.Combine(blenderBase, "extensions"),
+                _ => configPath
+            };
+        }
+
+        private long GetDirectorySize(string path)
+        {
+            try
+            {
+                var dirInfo = new DirectoryInfo(path);
+                return dirInfo.EnumerateFiles("*", SearchOption.AllDirectories)
+                    .Sum(f => f.Length);
+            }
+            catch { return 0; }
+        }
+
+        private int CountTotalFiles(List<BackupItem> items)
+        {
+            int count = 0;
+            foreach (var item in items.Where(x => x.IsSelected))
+            {
+                if (Directory.Exists(item.Path))
+                {
+                    count += Directory.EnumerateFiles(item.Path, "*", SearchOption.AllDirectories).Count();
+                }
+                else if (File.Exists(item.Path))
+                {
+                    count++;
+                }
+            }
+            return Math.Max(count, 1);
+        }
+
+        private int CountBackupFiles(string backupPath, List<BackupItem> items)
+        {
+            int count = 0;
+            foreach (var item in items.Where(x => x.IsSelected))
+            {
+                string sourcePath = Path.Combine(backupPath, item.Name);
+                if (Directory.Exists(sourcePath))
+                {
+                    count += Directory.EnumerateFiles(sourcePath, "*", SearchOption.AllDirectories).Count();
+                }
+            }
+            return Math.Max(count, 1);
+        }
+
+        private async Task CopyDirectoryAsync(string source, string destination, 
+            ref int filesProcessed, int totalFiles, string itemName)
+        {
+            await Task.Run(() =>
+            {
+                var sourceDir = new DirectoryInfo(source);
+                Directory.CreateDirectory(destination);
+
+                foreach (var file in sourceDir.EnumerateFiles("*", SearchOption.AllDirectories))
+                {
+                    string destFile = Path.Combine(destination, 
+                        file.FullName.Substring(source.Length).TrimStart(Path.DirectorySeparatorChar));
+                    
+                    Directory.CreateDirectory(Path.GetDirectoryName(destFile));
+                    file.CopyTo(destFile, true);
+                    
+                    filesProcessed++;
+                    RaiseProgressChanged(totalFiles, filesProcessed, itemName);
+                }
+            });
+        }
+
+        private void RaiseProgressChanged(int totalFiles, int filesProcessed, string currentFile)
+        {
+            ProgressChanged?.Invoke(this, new BackupProgress
+            {
+                TotalFiles = totalFiles,
+                FilesProcessed = filesProcessed,
+                CurrentFile = currentFile,
+                Status = $"Processing {currentFile}..."
+            });
+        }
+    }
+}

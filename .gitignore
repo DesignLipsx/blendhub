@@ -1,0 +1,73 @@
+﻿# Build results
+**/[Dd]ebug/
+**/[Dd]ebugPublic/
+**/[Rr]elease/
+**/[Rr]eleases/
+**/x64/
+**/x86/
+**/[Ww][Ii][Nn]32/
+**/[Aa][Rr][Mm]/
+**/[Aa][Rr][Mm]64/
+**/bld/
+**/[Bb]in/
+**/[Oo]bj/
+**/[Ll]og/
+**/[Ll]ogs/
+
+# Visual Studio cache/options
+.vs/**/*
+.vs/
+.vscode/
+.idea/
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Local History for Visual Studio
+.localhistory/
+
+# BeatPulse healthcheck temp database
+healthchecksdb
+
+# Backup  temporary files
+*.bak
+*.tmp
+*~
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+
+# Visual Studio profiler
+*.psess
+*.vsp
+*.vspx
+*.sap
+
+# Test Results
+TestResults/
+*.trx
+*.coverage
+
+# Unit test / performance analysis
+*.nunit
+
+# BenchmarkDotNet
+BenchmarkDotNet.Artifacts/
+
+# App specific
+*.log
+local.settings.json
+appsettings.local.json

@@ -1,0 +1,801 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
+using System.Text.Json;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media.Imaging;
+using Microsoft.UI.Xaml.Navigation;
+using Windows.Storage;
+using Windows.Storage.FileProperties;
+using Windows.Storage.Pickers;
+using WinRT.Interop;
+using BlendHub.Models;
+
+namespace BlendHub.Views
+{
+    public sealed partial class ProjectDetailPage : Page
+    {
+        private Project? _project;
+
+        public ProjectDetailPage()
+        {
+            this.InitializeComponent();
+        }
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+            if (e.Parameter is Project project)
+            {
+                _project = project;
+                LoadProjectDetails();
+            }
+        }
+
+        private void LoadProjectDetails()
+        {
+            if (_project == null) return;
+
+            ProjectTitle.Text = _project.Name;
+            ProjectPath.Text = _project.Path;
+            BlenderVersionText.Text = _project.BlenderVersion;
+            BlendFileText.Text = _project.BlendFileName;
+            CreatedAtText.Text = _project.CreatedAt.ToString("f");
+            NotesTextBox.Text = _project.Notes ?? string.Empty;
+
+            bool folderExists = _project.FolderExists;
+            bool blendExists = _project.BlendFileExists;
+
+            if (folderExists && blendExists)
+            {
+                StatusText.Text = "✅ Ready";
+                StatusText.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Green);
+            }
+            else if (folderExists && !blendExists)
+            {
+                StatusText.Text = "⚠ .blend file missing";
+                StatusText.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Orange);
+            }
+            else
+            {
+                StatusText.Text = "❌ Project folder not found";
+                StatusText.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Red);
+            }
+
+            MissingProjectInfoBar.IsOpen = !folderExists;
+            OpenBlendBtn.IsEnabled = blendExists;
+            OpenFolderBtn.IsEnabled = folderExists;
+            EditBtn.IsEnabled = folderExists;
+            AddFileBtn.IsEnabled = folderExists;
+
+            // Subfolders
+            if (_project.Subfolders.Count > 0)
+            {
+                SubfoldersListControl.ItemsSource = _project.Subfolders;
+                NoSubfoldersContainer.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                NoSubfoldersContainer.Visibility = Visibility.Visible;
+            }
+
+            // Project files
+            LoadProjectFiles();
+        }
+
+        private async System.Threading.Tasks.Task LoadExeIconAsync(string exePath, Image target)
+        {
+            try
+            {
+                if (!File.Exists(exePath)) return;
+                var storageFile = await Windows.Storage.StorageFile.GetFileFromPathAsync(exePath);
+                var thumbnail = await storageFile.GetThumbnailAsync(ThumbnailMode.SingleItem, 32);
+                if (thumbnail != null)
+                {
+                    var bitmapImage = new BitmapImage();
+                    await bitmapImage.SetSourceAsync(thumbnail.AsStreamForRead().AsRandomAccessStream());
+                    target.Source = bitmapImage;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Could not load icon for {exePath}: {ex.Message}");
+            }
+        }
+
+        private void LoadProjectFiles()
+        {
+            // Clear previous dynamic entries (keep NoFilesContainer at the end)
+            while (ProjectFilesPanel.Children.Count > 0)
+            {
+                ProjectFilesPanel.Children.RemoveAt(0);
+            }
+
+            if (_project == null || !_project.FolderExists)
+            {
+                NoFilesContainer.Visibility = Visibility.Visible;
+                ProjectFilesPanel.Children.Add(NoFilesContainer);
+                return;
+            }
+
+            int insertIndex = 0;
+            bool hasFiles = false;
+
+            // 1. Auto-detected files from launchers
+            if (_project.FileLaunchers.Count > 0)
+            {
+                var launcherExts = new HashSet<string>(_project.FileLaunchers.Keys, StringComparer.OrdinalIgnoreCase);
+                var matchingFiles = new List<FileInfo>();
+
+                try
+                {
+                    var dirInfo = new DirectoryInfo(_project.Path);
+                    var allFiles = dirInfo.GetFiles("*.*", SearchOption.AllDirectories);
+                    foreach (var file in allFiles)
+                    {
+                        if (launcherExts.Contains(file.Extension.ToLowerInvariant()))
+                        {
+                            matchingFiles.Add(file);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error scanning files: {ex.Message}");
+                }
+
+                if (matchingFiles.Count > 0)
+                {
+                    hasFiles = true;
+                    var grouped = matchingFiles.GroupBy(f => f.Extension.ToLowerInvariant()).OrderBy(g => g.Key);
+
+                    foreach (var group in grouped)
+                    {
+                        string ext = group.Key;
+                        string programPath = _project.FileLaunchers.ContainsKey(ext) ? _project.FileLaunchers[ext] : "";
+                        string programName = string.IsNullOrEmpty(programPath) ? "Default" : System.IO.Path.GetFileNameWithoutExtension(programPath);
+
+                        // Section header with exe icon
+                        var headerPanel = new StackPanel
+                        {
+                            Orientation = Orientation.Horizontal,
+                            Spacing = 8,
+                            Margin = new Thickness(0, insertIndex > 0 ? 12 : 0, 0, 6)
+                        };
+
+                        var headerIcon = new Image
+                        {
+                            Width = 18, Height = 18,
+                            Stretch = Microsoft.UI.Xaml.Media.Stretch.Uniform,
+                            VerticalAlignment = VerticalAlignment.Center
+                        };
+                        _ = LoadExeIconAsync(programPath, headerIcon);
+                        headerPanel.Children.Add(headerIcon);
+                        headerPanel.Children.Add(new TextBlock
+                        {
+                            Text = $"{ext.ToUpperInvariant()} Files — {programName}",
+                            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                            FontSize = 14,
+                            VerticalAlignment = VerticalAlignment.Center
+                        });
+
+                        ProjectFilesPanel.Children.Insert(insertIndex++, headerPanel);
+
+                        foreach (var file in group)
+                        {
+                            insertIndex = AddFileRow(insertIndex, file.Name,
+                                System.IO.Path.GetDirectoryName(System.IO.Path.GetRelativePath(_project.Path, file.FullName)) ?? "",
+                                file.FullPath, programPath, programName, false);
+                        }
+                    }
+                }
+            }
+
+            // 2. Custom files (manually added)
+            if (_project.CustomFiles.Count > 0)
+            {
+                var validCustomFiles = new List<string>();
+                foreach (var relPath in _project.CustomFiles)
+                {
+                    string fullPath = System.IO.Path.Combine(_project.Path, relPath);
+                    if (File.Exists(fullPath))
+                    {
+                        validCustomFiles.Add(relPath);
+                    }
+                }
+
+                if (validCustomFiles.Count > 0)
+                {
+                    hasFiles = true;
+
+                    var headerPanel = new StackPanel
+                    {
+                        Orientation = Orientation.Horizontal,
+                        Spacing = 8,
+                        Margin = new Thickness(0, insertIndex > 0 ? 12 : 0, 0, 6)
+                    };
+                    headerPanel.Children.Add(new FontIcon
+                    {
+                        Glyph = "\uE8A5",
+                        FontSize = 16,
+                        VerticalAlignment = VerticalAlignment.Center
+                    });
+                    headerPanel.Children.Add(new TextBlock
+                    {
+                        Text = "Custom Files — System Default",
+                        FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                        FontSize = 14,
+                        VerticalAlignment = VerticalAlignment.Center
+                    });
+                    ProjectFilesPanel.Children.Insert(insertIndex++, headerPanel);
+
+                    foreach (var relPath in validCustomFiles)
+                    {
+                        string fullPath = System.IO.Path.Combine(_project.Path, relPath);
+                        string fileName = System.IO.Path.GetFileName(relPath);
+                        string subfolder = System.IO.Path.GetDirectoryName(relPath) ?? "";
+
+                        insertIndex = AddCustomFileRow(insertIndex, fileName, subfolder, fullPath, relPath);
+                    }
+                }
+            }
+
+            if (!hasFiles)
+            {
+                NoFilesContainer.Visibility = Visibility.Visible;
+                ProjectFilesPanel.Children.Insert(insertIndex, NoFilesContainer);
+            }
+        }
+                {
+                    string fullPath = System.IO.Path.Combine(_project.Path, relPath);
+                    if (File.Exists(fullPath))
+                    {
+                        validCustomFiles.Add(relPath);
+                    }
+                }
+
+                if (validCustomFiles.Count > 0)
+                {
+                    hasFiles = true;
+
+                    var headerPanel = new StackPanel
+                    {
+                        Orientation = Orientation.Horizontal,
+                        Spacing = 8,
+                        Margin = new Thickness(0, insertIndex > 0 ? 12 : 0, 0, 6)
+                    };
+                    headerPanel.Children.Add(new FontIcon
+                    {
+                        Glyph = "\uE8A5",
+                        FontSize = 16,
+                        VerticalAlignment = VerticalAlignment.Center
+                    });
+                    headerPanel.Children.Add(new TextBlock
+                    {
+                        Text = "Custom Files — System Default",
+                        FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                        FontSize = 14,
+                        VerticalAlignment = VerticalAlignment.Center
+                    });
+                    ProjectFilesPanel.Children.Insert(insertIndex++, headerPanel);
+
+                    foreach (var relPath in validCustomFiles)
+                    {
+                        string fullPath = System.IO.Path.Combine(_project.Path, relPath);
+                        string fileName = System.IO.Path.GetFileName(relPath);
+                        string subfolder = System.IO.Path.GetDirectoryName(relPath) ?? "";
+
+                        insertIndex = AddCustomFileRow(insertIndex, fileName, subfolder, fullPath, relPath);
+                    }
+                }
+            }
+
+            NoFilesText.Visibility = hasFiles ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        private int AddFileRow(int insertIndex, string fileName, string subfolder, string fullPath,
+            string programPath, string programName, bool isCustom)
+        {
+            var row = new Border
+            {
+                Margin = new Thickness(0, 2, 0, 2),
+                Padding = new Thickness(12, 8, 12, 8),
+                CornerRadius = new CornerRadius(6),
+                Background = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["CardBackgroundFillColorSecondaryBrush"]
+            };
+
+            var rowGrid = new Grid
+            {
+                ColumnDefinitions =
+                {
+                    new ColumnDefinition { Width = new GridLength(1, GridUnitType.Auto) },
+                    new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
+                    new ColumnDefinition { Width = new GridLength(1, GridUnitType.Auto) }
+                }
+            };
+
+            // Exe icon (or file icon for custom)
+            if (!string.IsNullOrEmpty(programPath) && File.Exists(programPath))
+            {
+                var exeIcon = new Image
+                {
+                    Width = 20, Height = 20,
+                    Stretch = Microsoft.UI.Xaml.Media.Stretch.Uniform,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(0, 0, 10, 0)
+                };
+                _ = LoadExeIconAsync(programPath, exeIcon);
+                Grid.SetColumn(exeIcon, 0);
+                rowGrid.Children.Add(exeIcon);
+            }
+            else
+            {
+                var fileIcon = new FontIcon
+                {
+                    Glyph = "\uE8A5",
+                    FontSize = 16,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(0, 0, 10, 0),
+                    Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorSecondaryBrush"]
+                };
+                Grid.SetColumn(fileIcon, 0);
+                rowGrid.Children.Add(fileIcon);
+            }
+
+            var nameStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Spacing = 1 };
+            nameStack.Children.Add(new TextBlock { Text = fileName, FontSize = 14 });
+            if (!string.IsNullOrEmpty(subfolder))
+            {
+                nameStack.Children.Add(new TextBlock
+                {
+                    Text = subfolder,
+                    FontSize = 11,
+                    Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorTertiaryBrush"]
+                });
+            }
+            Grid.SetColumn(nameStack, 1);
+            rowGrid.Children.Add(nameStack);
+
+            var openBtn = new Button
+            {
+                Tag = fullPath + "|" + programPath,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(8, 0, 0, 0)
+            };
+
+            var btnStack = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+            if (!string.IsNullOrEmpty(programPath) && File.Exists(programPath))
+            {
+                var btnIcon = new Image
+                {
+                    Width = 16, Height = 16,
+                    Stretch = Microsoft.UI.Xaml.Media.Stretch.Uniform,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                _ = LoadExeIconAsync(programPath, btnIcon);
+                btnStack.Children.Add(btnIcon);
+                btnStack.Children.Add(new TextBlock { Text = $"Open in {programName}", VerticalAlignment = VerticalAlignment.Center });
+            }
+            else
+            {
+                btnStack.Children.Add(new FontIcon { Glyph = "\uE8DA", FontSize = 12 });
+                btnStack.Children.Add(new TextBlock { Text = "Open", VerticalAlignment = VerticalAlignment.Center });
+            }
+            openBtn.Content = btnStack;
+            openBtn.Click += OpenLauncherFile_Click;
+            Grid.SetColumn(openBtn, 2);
+            rowGrid.Children.Add(openBtn);
+
+            row.Child = rowGrid;
+            ProjectFilesPanel.Children.Insert(insertIndex++, row);
+            return insertIndex;
+        }
+
+        private int AddCustomFileRow(int insertIndex, string fileName, string subfolder, string fullPath, string relativePath)
+        {
+            var row = new Border
+            {
+                Margin = new Thickness(0, 2, 0, 2),
+                Padding = new Thickness(12, 8, 12, 8),
+                CornerRadius = new CornerRadius(6),
+                Background = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["CardBackgroundFillColorSecondaryBrush"]
+            };
+
+            var rowGrid = new Grid
+            {
+                ColumnDefinitions =
+                {
+                    new ColumnDefinition { Width = new GridLength(1, GridUnitType.Auto) },
+                    new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
+                    new ColumnDefinition { Width = new GridLength(1, GridUnitType.Auto) },
+                    new ColumnDefinition { Width = new GridLength(1, GridUnitType.Auto) }
+                }
+            };
+
+            var fileIcon = new FontIcon
+            {
+                Glyph = "\uE8A5",
+                FontSize = 16,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 10, 0),
+                Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorSecondaryBrush"]
+            };
+            Grid.SetColumn(fileIcon, 0);
+            rowGrid.Children.Add(fileIcon);
+
+            var nameStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Spacing = 1 };
+            nameStack.Children.Add(new TextBlock { Text = fileName, FontSize = 14 });
+            if (!string.IsNullOrEmpty(subfolder))
+            {
+                nameStack.Children.Add(new TextBlock
+                {
+                    Text = subfolder,
+                    FontSize = 11,
+                    Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorTertiaryBrush"]
+                });
+            }
+            Grid.SetColumn(nameStack, 1);
+            rowGrid.Children.Add(nameStack);
+
+            // Open button (system default)
+            var openBtn = new Button
+            {
+                Tag = fullPath + "|",
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(8, 0, 0, 0)
+            };
+            var openStack = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+            openStack.Children.Add(new FontIcon { Glyph = "\uE8DA", FontSize = 12 });
+            openStack.Children.Add(new TextBlock { Text = "Open", VerticalAlignment = VerticalAlignment.Center });
+            openBtn.Content = openStack;
+            openBtn.Click += OpenLauncherFile_Click;
+            Grid.SetColumn(openBtn, 2);
+            rowGrid.Children.Add(openBtn);
+
+            // Remove button
+            var removeBtn = new Button
+            {
+                Tag = relativePath,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(4, 0, 0, 0)
+            };
+            removeBtn.Style = (Style)Application.Current.Resources["SubtleButtonStyle"];
+            removeBtn.Content = new FontIcon { Glyph = "\uE711", FontSize = 12 };
+            removeBtn.Click += RemoveCustomFile_Click;
+            removeBtn.SetValue(ToolTipService.ToolTipProperty, "Remove from list");
+            Grid.SetColumn(removeBtn, 3);
+            rowGrid.Children.Add(removeBtn);
+
+            row.Child = rowGrid;
+            ProjectFilesPanel.Children.Insert(insertIndex++, row);
+            return insertIndex;
+        }
+
+        private void OpenLauncherFile_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is string tag)
+            {
+                var parts = tag.Split('|', 2);
+                if (parts.Length == 2)
+                {
+                    string filePath = parts[0];
+                    string programPath = parts[1];
+
+                    try
+                    {
+                        if (!string.IsNullOrEmpty(programPath) && File.Exists(programPath))
+                        {
+                            Process.Start(new ProcessStartInfo
+                            {
+                                FileName = programPath,
+                                Arguments = $"\"{filePath}\"",
+                                UseShellExecute = false
+                            });
+                        }
+                        else
+                        {
+                            Process.Start(new ProcessStartInfo
+                            {
+                                FileName = filePath,
+                                UseShellExecute = true
+                            });
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Error opening file: {ex.Message}");
+                    }
+                }
+            }
+        }
+
+        private async void AddCustomFile_Click(object sender, RoutedEventArgs e)
+        {
+            if (_project == null) return;
+
+            var picker = new FileOpenPicker();
+            picker.SuggestedStartLocation = PickerLocationId.ComputerFolder;
+            picker.FileTypeFilter.Add("*");
+
+            var window = App.MainWindow;
+            if (window != null)
+            {
+                IntPtr hwnd = WindowNative.GetWindowHandle(window);
+                InitializeWithWindow.Initialize(picker, hwnd);
+            }
+
+            var files = await picker.PickMultipleFilesAsync();
+            if (files != null && files.Count > 0)
+            {
+                foreach (var file in files)
+                {
+                    // Only allow files inside the project folder
+                    if (file.Path.StartsWith(_project.Path, StringComparison.OrdinalIgnoreCase))
+                    {
+                        string relativePath = System.IO.Path.GetRelativePath(_project.Path, file.Path);
+                        if (!_project.CustomFiles.Contains(relativePath, StringComparer.OrdinalIgnoreCase))
+                        {
+                            _project.CustomFiles.Add(relativePath);
+                        }
+                    }
+                    else
+                    {
+                        // File outside project folder — copy to project root and add
+                        string destPath = System.IO.Path.Combine(_project.Path, file.Name);
+                        try
+                        {
+                            if (!File.Exists(destPath))
+                            {
+                                File.Copy(file.Path, destPath);
+                            }
+                            string rel = file.Name;
+                            if (!_project.CustomFiles.Contains(rel, StringComparer.OrdinalIgnoreCase))
+                            {
+                                _project.CustomFiles.Add(rel);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"Error copying file: {ex.Message}");
+                        }
+                    }
+                }
+
+                SaveProjectsToJson();
+                LoadProjectDetails();
+            }
+        }
+
+        private void RemoveCustomFile_Click(object sender, RoutedEventArgs e)
+        {
+            if (_project == null) return;
+            if (sender is Button btn && btn.Tag is string relativePath)
+            {
+                _project.CustomFiles.Remove(relativePath);
+                SaveProjectsToJson();
+                LoadProjectDetails();
+            }
+        }
+
+        private void BackButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (Frame.CanGoBack)
+            {
+                Frame.GoBack();
+            }
+        }
+
+        private async void DeleteProject_Click(object sender, RoutedEventArgs e)
+        {
+            if (_project == null) return;
+
+            var confirmDialog = new ContentDialog
+            {
+                Title = "Delete Project?",
+                Content = $"Are you sure you want to delete '{_project.Name}'? This will remove the project from your list and delete all associated files.",
+                PrimaryButtonText = "Delete",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                PrimaryButtonStyle = Application.Current.Resources["DangerButtonStyle"] as Style,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await confirmDialog.ShowAsync();
+            if (result == ContentDialogResult.Primary)
+            {
+                try
+                {
+                    // Delete project files if they exist
+                    if (Directory.Exists(_project.Path))
+                    {
+                        Directory.Delete(_project.Path, true);
+                    }
+
+                    // Remove from projects.json
+                    string projectsFilePath = System.IO.Path.Combine(
+                        Windows.Storage.ApplicationData.Current.LocalFolder.Path, "projects.json");
+                    if (File.Exists(projectsFilePath))
+                    {
+                        string existingJson = File.ReadAllText(projectsFilePath);
+                        var allProjects = JsonSerializer.Deserialize<List<Project>>(existingJson) ?? new List<Project>();
+                        allProjects.RemoveAll(p => p.Name == _project.Name && p.Path == _project.Path);
+                        string json = JsonSerializer.Serialize(allProjects, new JsonSerializerOptions { WriteIndented = true });
+                        File.WriteAllText(projectsFilePath, json);
+                    }
+
+                    // Navigate back to project list
+                    if (Frame.CanGoBack)
+                    {
+                        Frame.GoBack();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ContentDialog errorDialog = new ContentDialog
+                    {
+                        XamlRoot = this.XamlRoot,
+                        Title = "Error Deleting Project",
+                        Content = $"Could not delete project: {ex.Message}",
+                        CloseButtonText = "OK"
+                    };
+                    await errorDialog.ShowAsync();
+                }
+            }
+        }
+
+        private void OpenBlend_Click(object sender, RoutedEventArgs e)
+        {
+            if (_project == null) return;
+            OpenPath(_project.FullBlendPath);
+        }
+
+        private void OpenFolder_Click(object sender, RoutedEventArgs e)
+        {
+            if (_project == null) return;
+            try { Process.Start("explorer.exe", _project.Path); }
+            catch (Exception ex) { Debug.WriteLine($"Error opening folder: {ex.Message}"); }
+        }
+
+        private async void EditProject_Click(object sender, RoutedEventArgs e)
+        {
+            if (_project == null) return;
+
+            var content = new EditProjectDialogContent(_project);
+            ContentDialog dialog = new ContentDialog
+            {
+                XamlRoot = this.XamlRoot,
+                Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
+                Title = $"Edit: {_project.Name}",
+                PrimaryButtonText = "Save Changes",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Primary,
+                Content = content
+            };
+
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Primary)
+            {
+                try
+                {
+                    ApplyProjectEdits(_project, content);
+                    SaveProjectsToJson();
+                    LoadProjectDetails();
+                }
+                catch (Exception ex)
+                {
+                    ContentDialog errorDialog = new ContentDialog
+                    {
+                        XamlRoot = this.XamlRoot,
+                        Title = "Error Saving Changes",
+                        Content = $"Could not save changes: {ex.Message}",
+                        CloseButtonText = "OK"
+                    };
+                    await errorDialog.ShowAsync();
+                }
+            }
+        }
+
+        private void ApplyProjectEdits(Project project, EditProjectDialogContent content)
+        {
+            var originalNames = content.OriginalFolderNames;
+            var newFolderNames = content.Folders.Select(f => f.Name).ToList();
+
+            for (int i = 0; i < Math.Min(originalNames.Count, newFolderNames.Count); i++)
+            {
+                if (originalNames[i] != newFolderNames[i] &&
+                    !string.IsNullOrWhiteSpace(originalNames[i]) &&
+                    !string.IsNullOrWhiteSpace(newFolderNames[i]))
+                {
+                    string oldPath = System.IO.Path.Combine(project.Path, originalNames[i]);
+                    string newPath = System.IO.Path.Combine(project.Path, newFolderNames[i]);
+                    if (Directory.Exists(oldPath) && !Directory.Exists(newPath))
+                        Directory.Move(oldPath, newPath);
+                }
+            }
+
+            foreach (var oldName in originalNames)
+            {
+                if (!string.IsNullOrWhiteSpace(oldName) && !newFolderNames.Contains(oldName))
+                {
+                    string folderPath = System.IO.Path.Combine(project.Path, oldName);
+                    if (Directory.Exists(folderPath)) Directory.Delete(folderPath, true);
+                }
+            }
+
+            foreach (var name in newFolderNames)
+            {
+                if (!string.IsNullOrWhiteSpace(name))
+                {
+                    string folderPath = System.IO.Path.Combine(project.Path, name);
+                    if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
+                }
+            }
+
+            project.Subfolders = newFolderNames.Where(n => !string.IsNullOrWhiteSpace(n)).ToList();
+
+            var launchers = new Dictionary<string, string>();
+            foreach (var launcher in content.Launchers)
+            {
+                if (!string.IsNullOrWhiteSpace(launcher.Extension) && !string.IsNullOrWhiteSpace(launcher.ProgramPath))
+                {
+                    string ext = launcher.Extension.StartsWith(".") ? launcher.Extension : "." + launcher.Extension;
+                    launchers[ext.ToLowerInvariant()] = launcher.ProgramPath;
+                }
+            }
+            project.FileLaunchers = launchers;
+        }
+
+        private void SaveProjectsToJson()
+        {
+            try
+            {
+                string projectsFilePath = System.IO.Path.Combine(
+                    Windows.Storage.ApplicationData.Current.LocalFolder.Path, "projects.json");
+
+                List<Project> allProjects = new List<Project>();
+                if (File.Exists(projectsFilePath))
+                {
+                    string existingJson = File.ReadAllText(projectsFilePath);
+                    var existing = JsonSerializer.Deserialize<List<Project>>(existingJson);
+                    if (existing != null) allProjects = existing;
+                }
+
+                var idx = allProjects.FindIndex(p => p.Name == _project?.Name && p.Path == _project?.Path);
+                if (idx >= 0 && _project != null)
+                    allProjects[idx] = _project;
+
+                string json = JsonSerializer.Serialize(allProjects, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(projectsFilePath, json);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error saving projects: {ex.Message}");
+            }
+        }
+
+        private void OpenSubfolder_Click(object sender, RoutedEventArgs e)
+        {
+            if (_project == null) return;
+            if (sender is Button btn && btn.Tag is string folderName)
+            {
+                string path = System.IO.Path.Combine(_project.Path, folderName);
+                try { if (Directory.Exists(path)) Process.Start("explorer.exe", path); }
+                catch (Exception ex) { Debug.WriteLine($"Error: {ex.Message}"); }
+            }
+        }
+
+        private void OpenPath(string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                    Process.Start(new ProcessStartInfo { FileName = path, UseShellExecute = true });
+            }
+            catch (Exception ex) { Debug.WriteLine($"Error: {ex.Message}"); }
+        }
+    }
+}

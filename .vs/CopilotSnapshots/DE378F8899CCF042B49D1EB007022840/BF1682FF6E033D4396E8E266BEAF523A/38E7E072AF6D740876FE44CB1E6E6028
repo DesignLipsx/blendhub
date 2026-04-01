@@ -1,0 +1,187 @@
+﻿using System;
+using System.IO;
+using System.Net.Http;
+using System.Threading.Tasks;
+using Microsoft.Windows.AppNotifications;
+using Microsoft.Windows.AppNotifications.Builder;
+using System.Diagnostics;
+using BlendHub.Models;
+
+namespace BlendHub.Services
+{
+    public class DownloadProgressEventArgs : EventArgs
+    {
+        public string Message { get; set; } = string.Empty;
+        public int Progress { get; set; }
+    }
+
+    public class DownloadCompletedEventArgs : EventArgs
+    {
+        public BlenderDownloadVersion? Installer { get; set; }
+        public string FilePath { get; set; } = string.Empty;
+    }
+
+    public class DownloadErrorEventArgs : EventArgs
+    {
+        public Exception? Exception { get; set; }
+    }
+
+    public class DownloadService
+    {
+        private static readonly HttpClient _httpClient = new();
+        private string _downloadedFilePath = "";
+
+        public event EventHandler<DownloadProgressEventArgs>? ProgressChanged;
+        public event EventHandler<DownloadCompletedEventArgs>? DownloadCompleted;
+        public event EventHandler<DownloadErrorEventArgs>? DownloadFailed;
+
+        public DownloadService()
+        {
+            AppNotificationManager.Default.NotificationInvoked += OnNotificationInvoked;
+        }
+
+        public async Task DownloadFileAsync(BlenderDownloadVersion installer)
+        {
+            try
+            {
+                var uri = new Uri(installer.Url);
+                var fileName = Path.GetFileName(uri.LocalPath);
+                var tempPath = Path.Combine(Path.GetTempPath(), fileName);
+                _downloadedFilePath = tempPath;
+
+                OnProgressChanged($"Downloading {fileName}...", 0);
+
+                using (var response = await _httpClient.GetAsync(installer.Url, HttpCompletionOption.ResponseHeadersRead))
+                {
+                    response.EnsureSuccessStatusCode();
+
+                    var totalBytes = response.Content.Headers.ContentLength ?? 0;
+
+                    using (var contentStream = await response.Content.ReadAsStreamAsync())
+                    using (var fileStream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
+                    {
+                        var downloadedBytes = 0L;
+                        var buffer = new byte[8192];
+                        var isMoreToRead = true;
+
+                        while (isMoreToRead)
+                        {
+                            var read = await contentStream.ReadAsync(buffer, 0, buffer.Length);
+                            if (read == 0)
+                            {
+                                isMoreToRead = false;
+                            }
+                            else
+                            {
+                                await fileStream.WriteAsync(buffer, 0, read);
+                                downloadedBytes += read;
+
+                                if (totalBytes > 0)
+                                {
+                                    var progress = (int)((downloadedBytes * 100) / totalBytes);
+                                    OnProgressChanged($"Downloading {fileName}... {progress}%", progress);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                OnDownloadCompleted(installer, tempPath);
+                ShowDownloadCompleteNotification(installer, tempPath);
+            }
+            catch (Exception ex)
+            {
+                OnDownloadFailed(ex);
+                ShowDownloadFailedNotification(ex);
+            }
+        }
+
+        private void ShowDownloadCompleteNotification(BlenderDownloadVersion installer, string filePath)
+        {
+            var notification = new AppNotificationBuilder()
+                .AddText("Download Complete")
+                .AddText($"Blender {installer.Version} has been downloaded successfully.")
+                .AddButton(new AppNotificationButton("Install Now")
+                    .AddArgument("action", "install")
+                    .AddArgument("filePath", filePath))
+                .AddButton(new AppNotificationButton("Open Folder")
+                    .AddArgument("action", "open_folder")
+                    .AddArgument("filePath", Path.GetDirectoryName(filePath)))
+                .BuildNotification();
+
+            AppNotificationManager.Default.Show(notification);
+        }
+
+        private void ShowDownloadFailedNotification(Exception ex)
+        {
+            var notification = new AppNotificationBuilder()
+                .AddText("Download Failed")
+                .AddText($"Failed to download: {ex.Message}")
+                .BuildNotification();
+
+            AppNotificationManager.Default.Show(notification);
+        }
+
+        private void OnNotificationInvoked(AppNotificationManager sender, AppNotificationActivatedEventArgs args)
+        {
+            if (args.Arguments.TryGetValue("action", out var action))
+            {
+                switch (action)
+                {
+                    case "install":
+                        if (args.Arguments.TryGetValue("filePath", out var filePath) && File.Exists(filePath))
+                        {
+                            Process.Start(new ProcessStartInfo
+                            {
+                                FileName = filePath,
+                                UseShellExecute = true
+                            });
+                        }
+                        break;
+                    case "open_folder":
+                        if (args.Arguments.TryGetValue("filePath", out var folderPath) && Directory.Exists(folderPath))
+                        {
+                            Process.Start(new ProcessStartInfo
+                            {
+                                FileName = folderPath,
+                                UseShellExecute = true
+                            });
+                        }
+                        break;
+                }
+            }
+        }
+
+        private void OnProgressChanged(string message, int progress)
+        {
+            ProgressChanged?.Invoke(this, new DownloadProgressEventArgs { Message = message, Progress = progress });
+        }
+
+        private void OnDownloadCompleted(BlenderDownloadVersion installer, string filePath)
+        {
+            DownloadCompleted?.Invoke(this, new DownloadCompletedEventArgs { Installer = installer, FilePath = filePath });
+        }
+
+        private void OnDownloadFailed(Exception ex)
+        {
+            DownloadFailed?.Invoke(this, new DownloadErrorEventArgs { Exception = ex });
+        }
+    }
+
+    public class DownloadProgressEventArgs : EventArgs
+    {
+        public string Message { get; set; } = string.Empty;
+        public int Progress { get; set; }
+    }
+
+    public class DownloadCompletedEventArgs : EventArgs
+    {
+        public BlenderDownloadVersion? Installer { get; set; }
+        public string FilePath { get; set; } = string.Empty;
+    }
+
+    public class DownloadErrorEventArgs : EventArgs
+    {
+        public Exception? Exception { get; set; }
+    }
+}

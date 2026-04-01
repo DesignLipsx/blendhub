@@ -1,0 +1,458 @@
+﻿using Microsoft.UI;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Navigation;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
+using Windows.ApplicationModel.DataTransfer;
+using Windows.Storage;
+using Windows.Storage.Pickers;
+using WinRT.Interop;
+using BlendHub.Models;
+using BlendHub.Services;
+
+namespace BlendHub.Views
+{
+    public sealed partial class ProjectPage : Page
+    {
+        public ObservableCollection<Project> Projects { get; } = new ObservableCollection<Project>();
+        private string? _projectsFilePath;
+        private Project? _lastCreatedProject;
+
+        public ProjectPage()
+        {
+            this.InitializeComponent();
+            
+            try 
+            {
+                // Try packaged storage first, fallback to app folder for standalone/unpackaged
+                try {
+                    _projectsFilePath = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "projects.json");
+                } catch {
+                    _projectsFilePath = Path.Combine(AppContext.BaseDirectory, "projects.json");
+                }
+                LoadProjects();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to get LocalFolder: {ex.Message}");
+            }
+
+            CompactProjectsList.ItemsSource = Projects;
+            DetailedProjectsList.ItemsSource = Projects;
+            UpdateEmptyState();
+        }
+
+        private void LoadProjects()
+        {
+            if (string.IsNullOrEmpty(_projectsFilePath)) return;
+            try
+            {
+                if (File.Exists(_projectsFilePath))
+                {
+                    string json = File.ReadAllText(_projectsFilePath);
+                    var projects = JsonSerializer.Deserialize<List<Project>>(json);
+                    if (projects != null)
+                    {
+                        Projects.Clear();
+                        foreach (var p in projects)
+                        {
+                            Projects.Add(p);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error loading projects: {ex.Message}");
+            }
+        }
+
+        private void SaveProjects()
+        {
+            if (string.IsNullOrEmpty(_projectsFilePath)) return;
+            try
+            {
+                string json = JsonSerializer.Serialize(Projects.ToList(), new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(_projectsFilePath, json);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error saving projects: {ex.Message}");
+            }
+        }
+
+        private void UpdateEmptyState()
+        {
+            bool hasProjects = Projects.Count > 0;
+            EmptyStatePanel.Visibility = hasProjects ? Visibility.Collapsed : Visibility.Visible;
+            DropZone.Visibility = hasProjects ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private async void ShowDialog_Click(object sender, RoutedEventArgs e)
+        {
+            var content = new SetProjectDialogContent();
+            var dialog = new ContentDialog
+            {
+                Title = "Create New Project",
+                Content = content,
+                PrimaryButtonText = "Create",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = this.XamlRoot,
+                Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style
+            };
+
+            // Enable/disable primary button based on validation
+            dialog.IsPrimaryButtonEnabled = content.IsValid;
+            content.ValidationChanged += (s, args) =>
+            {
+                dialog.IsPrimaryButtonEnabled = content.IsValid;
+            };
+
+            var result = await dialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                CreatingProgressPanel.Visibility = Visibility.Visible;
+                ProgressText.Text = $"Creating project '{content.ProjectName}'...";
+                
+                try 
+                {
+                    Project newProject = new Project
+                    {
+                        Name = content.ProjectName,
+                        Path = Path.Combine(content.ProjectLocation, content.ProjectName),
+                        BlendFileName = content.FileName,
+                        BlenderVersion = content.SelectedVersion?.Version ?? "Unknown",
+                        CreatedAt = DateTime.Now,
+                        Subfolders = content.Folders.Select(f => f.Name).ToList(),
+                        FileLaunchers = content.FileLaunchers.ToDictionary(l => l.Extension, l => l.ProgramPath)
+                    };
+
+                    // Run file system operations on background thread
+                    await Task.Run(() => {
+                        if (!Directory.Exists(newProject.Path))
+                        {
+                            Directory.CreateDirectory(newProject.Path);
+                        }
+
+                        foreach (var sub in newProject.Subfolders)
+                        {
+                            string subPath = Path.Combine(newProject.Path, sub);
+                            if (!Directory.Exists(subPath))
+                            {
+                                Directory.CreateDirectory(subPath);
+                            }
+                        }
+                        
+                        // Copy/Create dummy blender file if it doesn't exist
+                        if (!File.Exists(newProject.FullBlendPath))
+                        {
+                            File.WriteAllText(newProject.FullBlendPath, "Blender project placeholder");
+                        }
+                    });
+
+                    Projects.Add(newProject);
+                    _lastCreatedProject = newProject;
+                    SaveProjects();
+                    UpdateEmptyState();
+
+                    ProjectSuccessInfoBar.Title = "Project Created";
+                    ProjectSuccessInfoBar.Message = $"Project '{newProject.Name}' has been successfully setup at {newProject.Path}.";
+                    ProjectSuccessInfoBar.IsOpen = true;
+                }
+                catch (Exception ex)
+                {
+                    ContentDialog errorDialog = new ContentDialog
+                    {
+                        Title = "Creation Failed",
+                        Content = $"Could not create project folders: {ex.Message}",
+                        CloseButtonText = "OK",
+                        XamlRoot = this.XamlRoot
+                    };
+                    await errorDialog.ShowAsync();
+                }
+                finally
+                {
+                    CreatingProgressPanel.Visibility = Visibility.Collapsed;
+                }
+            }
+        }
+
+        private void OpenProject_Click(object sender, RoutedEventArgs e)
+        {
+            if (_lastCreatedProject != null && File.Exists(_lastCreatedProject.FullBlendPath))
+            {
+                Process.Start(new ProcessStartInfo(_lastCreatedProject.FullBlendPath) { UseShellExecute = true });
+            }
+        }
+
+        private async void RemoveProject_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is string name)
+            {
+                var project = Projects.FirstOrDefault(p => p.Name == name);
+                if (project != null)
+                {
+                    var confirmDialog = new ContentDialog
+                    {
+                        Title = "Remove Project?",
+                        Content = $"Are you sure you want to remove '{project.Name}' from your recent projects? This will not delete any files.",
+                        PrimaryButtonText = "Remove",
+                        CloseButtonText = "Cancel",
+                        DefaultButton = ContentDialogButton.Close,
+                        PrimaryButtonStyle = Application.Current.Resources["DangerButtonStyle"] as Style,
+                        XamlRoot = this.XamlRoot
+                    };
+
+                    var result = await confirmDialog.ShowAsync();
+                    if (result == ContentDialogResult.Primary)
+                    {
+                        Projects.Remove(project);
+                        SaveProjects();
+                        UpdateEmptyState();
+                    }
+                }
+            }
+        }
+
+        private async void EditProject_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is string name)
+            {
+                var project = Projects.FirstOrDefault(p => p.Name == name);
+                if (project == null) return;
+
+                var content = new SetProjectDialogContent();
+                
+                // Populate with existing project data
+                content.SetProjectName(project.Name);
+                content.SetFileName(project.BlendFileName);
+                content.SetProjectLocation(Path.GetDirectoryName(project.Path) ?? "");
+                
+                // Select matching blender version if available
+                var versions = content.GetBlenderVersions();
+                if (versions != null)
+                {
+                    var matchingVersion = versions.FirstOrDefault(v => v.Version == project.BlenderVersion);
+                    content.SetSelectedVersion(matchingVersion);
+                }
+
+                var dialog = new ContentDialog
+                {
+                    Title = "Edit Project",
+                    Content = content,
+                    PrimaryButtonText = "Save",
+                    CloseButtonText = "Cancel",
+                    DefaultButton = ContentDialogButton.Primary,
+                    XamlRoot = this.XamlRoot,
+                    Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style
+                };
+
+                // Enable/disable primary button based on validation
+                dialog.IsPrimaryButtonEnabled = content.IsValid;
+                content.ValidationChanged += (s, args) =>
+                {
+                    dialog.IsPrimaryButtonEnabled = content.IsValid;
+                };
+
+                var result = await dialog.ShowAsync();
+
+                if (result == ContentDialogResult.Primary)
+                {
+                    // Update project properties
+                    project.Name = content.ProjectName;
+                    project.BlendFileName = content.FileName;
+                    project.BlenderVersion = content.SelectedVersion?.Version ?? project.BlenderVersion;
+                    project.Subfolders = content.Folders.Select(f => f.Name).ToList();
+                    project.FileLaunchers = content.FileLaunchers.ToDictionary(l => l.Extension, l => l.ProgramPath);
+                    
+                    // Update path if location changed
+                    string newPath = Path.Combine(content.ProjectLocation, content.ProjectName);
+                    if (newPath != project.Path && !string.IsNullOrEmpty(content.ProjectLocation))
+                    {
+                        // Optionally move folder - for now just update the path reference
+                        project.Path = newPath;
+                    }
+
+                    SaveProjects();
+                    
+                    // Refresh the lists
+                    var projectsList = Projects.ToList();
+                    Projects.Clear();
+                    foreach (var p in projectsList)
+                    {
+                        Projects.Add(p);
+                    }
+
+                    ProjectSuccessInfoBar.Title = "Project Updated";
+                    ProjectSuccessInfoBar.Message = $"Project '{project.Name}' has been updated successfully.";
+                    ProjectSuccessInfoBar.IsOpen = true;
+                }
+            }
+        }
+
+        private void OpenProjectDetail_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is string name)
+            {
+                var project = Projects.FirstOrDefault(p => p.Name == name);
+                if (project != null)
+                {
+                    this.Frame.Navigate(typeof(ProjectDetailPage), project);
+                }
+            }
+        }
+
+        private void OpenProjectCard_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is string name)
+            {
+                var project = Projects.FirstOrDefault(p => p.Name == name);
+                if (project != null && File.Exists(project.FullBlendPath))
+                {
+                    Process.Start(new ProcessStartInfo(project.FullBlendPath) { UseShellExecute = true });
+                }
+            }
+        }
+
+        private async void BrowseProjectBtn_Click(object sender, RoutedEventArgs e)
+        {
+            var folderPicker = new FolderPicker();
+            folderPicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+            folderPicker.FileTypeFilter.Add("*");
+
+            var window = App.MainWindow;
+            if (window != null)
+            {
+                IntPtr hwnd = WindowNative.GetWindowHandle(window);
+                InitializeWithWindow.Initialize(folderPicker, hwnd);
+            }
+
+            var folder = await folderPicker.PickSingleFolderAsync();
+            if (folder != null)
+            {
+                await ProcessDroppedFolderAsync(folder);
+            }
+        }
+
+        private void DropZone_DragOver(object sender, DragEventArgs e)
+        {
+            // Only accept folder drops
+            if (e.DataView.Contains(StandardDataFormats.StorageItems))
+            {
+                e.AcceptedOperation = DataPackageOperation.Copy;
+                e.DragUIOverride.IsCaptionVisible = true;
+                e.DragUIOverride.IsContentVisible = true;
+                e.DragUIOverride.IsGlyphVisible = true;
+                e.DragUIOverride.Caption = "Add as project";
+            }
+        }
+
+        private async void DropZone_Drop(object sender, DragEventArgs e)
+        {
+            if (!e.DataView.Contains(StandardDataFormats.StorageItems))
+            {
+                return;
+            }
+
+            var items = await e.DataView.GetStorageItemsAsync();
+            
+            foreach (var item in items)
+            {
+                if (item is Windows.Storage.StorageFolder folder)
+                {
+                    await ProcessDroppedFolderAsync(folder);
+                }
+            }
+        }
+
+        private async Task ProcessDroppedFolderAsync(Windows.Storage.StorageFolder folder)
+        {
+            try
+            {
+                // Check if folder contains .blend files
+                var files = await folder.GetFilesAsync();
+                bool hasBlendFile = files.Any(f => f.FileType.Equals(".blend", StringComparison.OrdinalIgnoreCase));
+
+                if (!hasBlendFile)
+                {
+                    // Show error dialog
+                    var errorDialog = new ContentDialog
+                    {
+                        Title = "Invalid Project Folder",
+                        Content = $"The folder '{folder.Name}' does not contain any .blend files. Please drop a folder that contains at least one .blend file.",
+                        CloseButtonText = "OK",
+                        XamlRoot = this.XamlRoot
+                    };
+                    await errorDialog.ShowAsync();
+                    return;
+                }
+
+                // Check if project already exists
+                string projectPath = folder.Path;
+                var existingProject = Projects.FirstOrDefault(p => p.Path.Equals(projectPath, StringComparison.OrdinalIgnoreCase));
+                
+                if (existingProject != null)
+                {
+                    var infoDialog = new ContentDialog
+                    {
+                        Title = "Project Already Exists",
+                        Content = $"The project '{existingProject.Name}' is already in your recent projects list.",
+                        CloseButtonText = "OK",
+                        XamlRoot = this.XamlRoot
+                    };
+                    await infoDialog.ShowAsync();
+                    return;
+                }
+
+                // Find the first .blend file
+                var blendFile = files.First(f => f.FileType.Equals(".blend", StringComparison.OrdinalIgnoreCase));
+                string blendFileName = Path.GetFileNameWithoutExtension(blendFile.Name);
+
+                // Create project entry
+                var project = new Project
+                {
+                    Name = folder.Name,
+                    Path = projectPath,
+                    BlendFileName = blendFileName,
+                    BlenderVersion = "Unknown",
+                    CreatedAt = DateTime.Now,
+                    Subfolders = new List<string>(),
+                    FileLaunchers = new Dictionary<string, string>()
+                };
+
+                // Add to projects list
+                Projects.Add(project);
+                SaveProjects();
+                UpdateEmptyState();
+
+                // Show success notification
+                ProjectSuccessInfoBar.Title = "Project Added";
+                ProjectSuccessInfoBar.Message = $"Project '{project.Name}' has been added to your recent projects.";
+                ProjectSuccessInfoBar.IsOpen = true;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error processing dropped folder: {ex.Message}");
+                
+                var errorDialog = new ContentDialog
+                {
+                    Title = "Error",
+                    Content = $"Failed to add project: {ex.Message}",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                };
+                await errorDialog.ShowAsync();
+            }
+        }
+    }
+}

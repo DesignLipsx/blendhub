@@ -1,0 +1,110 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="BlendHub.Views.SyncPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:BlendHub"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Grid RowDefinitions="Auto,*" Padding="20">
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Spacing="8" Margin="0,0,0,20">
+            <TextBlock Text="Sync" FontSize="28" FontWeight="Bold" />
+            <TextBlock Text="Synchronize settings between different Blender versions" Opacity="0.7" />
+        </StackPanel>
+
+        <!-- Content -->
+        <ScrollViewer Grid.Row="1">
+            <StackPanel Spacing="20">
+                <!-- Source and Target Selection -->
+                <Grid ColumnDefinitions="*,Auto,*" ColumnSpacing="20">
+                    <!-- Source -->
+                    <StackPanel Grid.Column="0" Spacing="8">
+                        <TextBlock Text="Source Blender Version" FontSize="14" FontWeight="SemiBold" />
+                        <ComboBox x:Name="SourceVersionCombo" PlaceholderText="Current Version" IsEnabled="False" />
+                    </StackPanel>
+
+                    <!-- Arrow -->
+                    <StackPanel Grid.Column="1" Justification="Center" VerticalAlignment="Center">
+                        <TextBlock Text="→" FontSize="24" />
+                    </StackPanel>
+
+                    <!-- Target -->
+                    <StackPanel Grid.Column="2" Spacing="8">
+                        <TextBlock Text="Target Blender Version" FontSize="14" FontWeight="SemiBold" />
+                        <ComboBox x:Name="TargetVersionCombo" SelectionChanged="OnTargetVersionChanged" />
+                    </StackPanel>
+                </Grid>
+
+                <!-- Items to Sync -->
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Select Items to Sync" FontSize="14" FontWeight="SemiBold" />
+                    
+                    <ItemsControl x:Name="SyncItemsControl">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" Padding="12" BorderThickness="1,0,0,1" 
+                                      BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}">
+                                    <CheckBox Grid.Column="0" VerticalAlignment="Center" 
+                                              IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding Path}" FontSize="12" Opacity="0.6" TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="{Binding SizeDisplay}" 
+                                               FontSize="12" Opacity="0.7" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <!-- Total Size -->
+                <Border Background="{ThemeResource LayerFillColorDefaultBrush}" CornerRadius="8" Padding="16">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="20">
+                        <StackPanel Grid.Column="0" Spacing="4">
+                            <TextBlock Text="Total Sync Size" FontSize="12" Opacity="0.7" />
+                            <TextBlock x:Name="TotalSizeTextBlock" Text="0 MB" FontSize="20" FontWeight="SemiBold" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                            <TextBlock Text="Selected Items" FontSize="12" Opacity="0.7" />
+                            <TextBlock x:Name="SelectedItemsTextBlock" Text="0" FontSize="20" FontWeight="SemiBold" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Warning Message -->
+                <Border Background="{ThemeResource SystemFillColorCautionBrush}" 
+                        CornerRadius="8" Padding="12">
+                    <TextBlock x:Name="WarningTextBlock" 
+                               Text="⚠️ Syncing will overwrite settings in the target Blender version."
+                               TextWrapping="Wrap" />
+                </Border>
+
+                <!-- Sync Button -->
+                <Button 
+                    x:Name="SyncButton"
+                    Content="Sync Settings"
+                    Height="48"
+                    FontSize="16"
+                    Click="OnSyncClick"
+                    Style="{ThemeResource AccentButtonStyle}" />
+
+                <!-- Progress -->
+                <StackPanel x:Name="ProgressStackPanel" Visibility="Collapsed" Spacing="8">
+                    <ProgressBar x:Name="SyncProgressBar" IsIndeterminate="False" Height="4" />
+                    <TextBlock x:Name="ProgressTextBlock" Text="Syncing..." FontSize="12" />
+                </StackPanel>
+
+                <!-- Status Message -->
+                <TextBlock 
+                    x:Name="StatusTextBlock"
+                    TextWrapping="Wrap"
+                    Visibility="Collapsed" />
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

@@ -1,0 +1,122 @@
+<UserControl
+    x:Class="BlendHub.Views.EditProjectDialogContent"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:BlendHub.Views"
+    xmlns:models="using:BlendHub.Models"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch" MinWidth="450" Padding="0">
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" Padding="0,0,16,0">
+            <StackPanel Spacing="16" Margin="0,0,0,16">
+                <!-- Validation Warning -->
+                <InfoBar x:Name="WarningInfoBar" IsOpen="False" IsClosable="False" Severity="Warning" Title="Missing Information" Message="" />
+
+                <!-- Project Info (read-only) -->
+                <StackPanel Spacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE946;" FontSize="16" VerticalAlignment="Center" />
+                        <TextBlock Text="Project Info:" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBox x:Name="ProjectNameTextBox" Header="Project Name:" IsReadOnly="True" />
+                    <TextBox x:Name="ProjectPathTextBox" Header="Project Path:" IsReadOnly="True" />
+                </StackPanel>
+
+                <!-- Subfolders -->
+                <StackPanel Spacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xED25;" FontSize="16" VerticalAlignment="Center" />
+                        <TextBlock Text="Subfolders:" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <ItemsControl x:Name="FoldersItemsControl">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="models:ProjectFolder">
+                                <Grid Margin="0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{x:Bind Label}" VerticalAlignment="Center" Width="80" Margin="0,0,8,0" />
+                                    <TextBox Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Grid.Column="1" />
+                                    <Button Click="DeleteFolder_Click" 
+                                            Content="&#xE711;" 
+                                            FontFamily="Segoe Fluent Icons" 
+                                            VerticalAlignment="Center" 
+                                            Grid.Column="2" 
+                                            Margin="8,0,0,0"
+                                            Style="{StaticResource SubtleButtonStyle}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <Button Click="AddFolder_Click" HorizontalAlignment="Stretch" Margin="0,8,0,0">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE710;" FontSize="12" />
+                            <TextBlock Text="Add Folder" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <!-- File Launchers -->
+                <StackPanel Spacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE7AC;" FontSize="16" VerticalAlignment="Center" />
+                        <TextBlock Text="File Launchers:" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock Text="Associate file extensions with programs to open project files." 
+                               FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+
+                    <ItemsControl x:Name="LaunchersItemsControl">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="models:FileLauncher">
+                                <Grid Margin="0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Text="{Binding Extension, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                             PlaceholderText=".psd" 
+                                             VerticalAlignment="Center" 
+                                             Grid.Column="0" Margin="0,0,8,0" />
+                                    <TextBox Text="{Binding ProgramPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                             PlaceholderText="Program path..." 
+                                             IsReadOnly="True"
+                                             VerticalAlignment="Center" 
+                                             Grid.Column="1" />
+                                    <Button Click="BrowseLauncher_Click" 
+                                            Content="&#xED25;" 
+                                            FontFamily="Segoe Fluent Icons" 
+                                            VerticalAlignment="Center" 
+                                            Grid.Column="2" 
+                                            Margin="4,0,0,0"
+                                            ToolTipService.ToolTip="Browse Program" />
+                                    <Button Click="DeleteLauncher_Click" 
+                                            Content="&#xE711;" 
+                                            FontFamily="Segoe Fluent Icons" 
+                                            VerticalAlignment="Center" 
+                                            Grid.Column="3" 
+                                            Margin="4,0,0,0"
+                                            Style="{StaticResource SubtleButtonStyle}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <Button Click="AddLauncher_Click" HorizontalAlignment="Stretch" Margin="0,8,0,0">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE710;" FontSize="12" />
+                            <TextBlock Text="Add File Launcher" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

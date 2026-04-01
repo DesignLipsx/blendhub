@@ -1,0 +1,176 @@
+﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Threading.Tasks;
+using BlendHub.Services;
+using Windows.Storage.Pickers;
+using Windows.Storage;
+
+namespace BlendHub.Views
+{
+    public sealed partial class RestorePage : Page
+    {
+        private BackupService _backupService;
+        private ObservableCollection<BackupVersion> _backups;
+        private ObservableCollection<BackupItem> _restoreItems;
+        private string _selectedRestorePath;
+
+        public RestorePage()
+        {
+            this.InitializeComponent();
+            _backupService = new BackupService();
+            _backupService.ProgressChanged += OnRestoreProgressChanged;
+            _backups = new ObservableCollection<BackupVersion>();
+            _restoreItems = new ObservableCollection<BackupItem>();
+            BackupListBox.ItemsSource = _backups;
+            RestoreItemsControl.ItemsSource = _restoreItems;
+        }
+
+        private async void OnBrowseRestorePath(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var folderPicker = new FolderPicker();
+                folderPicker.FileTypeFilter.Add("*");
+                folderPicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+
+                var nativeWindow = (Application.Current as App).MainWindow;
+                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(nativeWindow);
+                WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
+
+                StorageFolder folder = await folderPicker.PickSingleFolderAsync();
+                if (folder != null)
+                {
+                    _selectedRestorePath = folder.Path;
+                    RestorePathTextBox.Text = _selectedRestorePath;
+                    LoadAvailableBackups();
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowErrorMessage($"Error selecting folder: {ex.Message}");
+            }
+        }
+
+        private void LoadAvailableBackups()
+        {
+            if (string.IsNullOrEmpty(_selectedRestorePath))
+                return;
+
+            var backups = _backupService.GetAvailableBackups(_selectedRestorePath);
+            _backups.Clear();
+            foreach (var backup in backups)
+            {
+                _backups.Add(backup);
+            }
+
+            if (_backups.Any())
+            {
+                BackupListBox.SelectedIndex = 0;
+                OnBackupSelected(_backups.First());
+            }
+        }
+
+        private void BackupListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (BackupListBox.SelectedItem is BackupVersion backup)
+            {
+                OnBackupSelected(backup);
+            }
+        }
+
+        private void OnBackupSelected(BackupVersion backup)
+        {
+            // Load items from the selected backup
+            var items = _backupService.GetAvailableBackupItems();
+            _restoreItems.Clear();
+            foreach (var item in items)
+            {
+                _restoreItems.Add(item);
+            }
+        }
+
+        private async void OnRestoreClick(object sender, RoutedEventArgs e)
+        {
+            if (BackupListBox.SelectedItem is not BackupVersion selectedBackup)
+            {
+                ShowErrorMessage("Please select a backup to restore");
+                return;
+            }
+
+            var selectedItems = _restoreItems.Where(x => x.IsSelected).ToList();
+            if (!selectedItems.Any())
+            {
+                ShowErrorMessage("Please select at least one item to restore");
+                return;
+            }
+
+            // Confirmation dialog
+            ContentDialog confirmDialog = new ContentDialog()
+            {
+                Title = "Confirm Restore",
+                Content = "This will overwrite your current Blender settings. This action cannot be undone. Continue?",
+                PrimaryButtonText = "Yes, Restore",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await confirmDialog.ShowAsync();
+            if (result != ContentDialogResult.Primary)
+                return;
+
+            RestoreButton.IsEnabled = false;
+            ProgressStackPanel.Visibility = Visibility.Visible;
+            RestoreProgressBar.Value = 0;
+
+            try
+            {
+                bool success = await _backupService.RestoreAsync(selectedBackup, selectedItems);
+                if (success)
+                {
+                    ShowSuccessMessage("Restore completed successfully!");
+                }
+                else
+                {
+                    ShowErrorMessage("Restore failed. Please check the logs.");
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowErrorMessage($"Restore error: {ex.Message}");
+            }
+            finally
+            {
+                RestoreButton.IsEnabled = true;
+                ProgressStackPanel.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void OnRestoreProgressChanged(object sender, BackupProgress progress)
+        {
+            DispatcherQueue.GetForCurrentThread().TryEnqueue(() =>
+            {
+                RestoreProgressBar.Value = progress.ProgressPercentage;
+                ProgressTextBlock.Text = $"Processing {progress.CurrentFile}... ({progress.FilesProcessed}/{progress.TotalFiles})";
+            });
+        }
+
+        private void ShowErrorMessage(string message)
+        {
+            StatusTextBlock.Text = message;
+            StatusTextBlock.Foreground = (Microsoft.UI.Colors.Red).ToColor();
+            StatusTextBlock.Visibility = Visibility.Visible;
+        }
+
+        private void ShowSuccessMessage(string message)
+        {
+            StatusTextBlock.Text = message;
+            StatusTextBlock.Foreground = (Microsoft.UI.Colors.Green).ToColor();
+            StatusTextBlock.Visibility = Visibility.Visible;
+        }
+    }
+}
