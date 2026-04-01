@@ -3,6 +3,26 @@
   "WorkspaceRootPath": "E:\\apps\\BlendHub\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{FC1CF52A-CF3D-140B-F7C7-B9CB3DA178EE}|BlendHub\\BlendHub.csproj|e:\\apps\\blendhub\\blendhub\\.gitignore||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{FC1CF52A-CF3D-140B-F7C7-B9CB3DA178EE}|BlendHub\\BlendHub.csproj|solutionrelative:blendhub\\.gitignore||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\apps\\BlendHub\\requirements.txt||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:requirements.txt||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FC1CF52A-CF3D-140B-F7C7-B9CB3DA178EE}|BlendHub\\BlendHub.csproj|e:\\apps\\blendhub\\blendhub\\helpers\\blenderversionfetcher.py||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{FC1CF52A-CF3D-140B-F7C7-B9CB3DA178EE}|BlendHub\\BlendHub.csproj|solutionrelative:blendhub\\helpers\\blenderversionfetcher.py||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\apps\\BlendHub\\.github\\workflows\\update-blender-versions.yml||{06C066C6-04A2-4E5D-8202-439FD4234EF1}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:.github\\workflows\\update-blender-versions.yml||{06C066C6-04A2-4E5D-8202-439FD4234EF1}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FC1CF52A-CF3D-140B-F7C7-B9CB3DA178EE}|BlendHub\\BlendHub.csproj|e:\\apps\\blendhub\\blendhub\\github_connection.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}",
+      "RelativeMoniker": "D:0:0:{FC1CF52A-CF3D-140B-F7C7-B9CB3DA178EE}|BlendHub\\BlendHub.csproj|solutionrelative:blendhub\\github_connection.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{FC1CF52A-CF3D-140B-F7C7-B9CB3DA178EE}|BlendHub\\BlendHub.csproj|e:\\apps\\blendhub\\blendhub\\views\\installpage.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{FC1CF52A-CF3D-140B-F7C7-B9CB3DA178EE}|BlendHub\\BlendHub.csproj|solutionrelative:blendhub\\views\\installpage.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -63,11 +83,16 @@
       "RelativeMoniker": "D:0:0:{FC1CF52A-CF3D-140B-F7C7-B9CB3DA178EE}|BlendHub\\BlendHub.csproj|solutionrelative:blendhub\\services\\downloadservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\jithu\\AppData\\Local\\Temp\\CopilotBaseline\\Deleted\\-1270434013\\InstallPage.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\apps\\BlendHub\\.gitignore||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:.gitignore||{3B902123-F8A7-4915-9F01-361F908088D0}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{FC1CF52A-CF3D-140B-F7C7-B9CB3DA178EE}|BlendHub\\BlendHub.csproj|e:\\apps\\blendhub\\blendhub\\cleanup_summary.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}",
-      "RelativeMoniker": "D:0:0:{FC1CF52A-CF3D-140B-F7C7-B9CB3DA178EE}|BlendHub\\BlendHub.csproj|solutionrelative:blendhub\\cleanup_summary.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\apps\\BlendHub\\README.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:README.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FC1CF52A-CF3D-140B-F7C7-B9CB3DA178EE}|BlendHub\\BlendHub.csproj|e:\\apps\\blendhub\\blendhub\\helpers\\blenderversionfetcher.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FC1CF52A-CF3D-140B-F7C7-B9CB3DA178EE}|BlendHub\\BlendHub.csproj|solutionrelative:blendhub\\helpers\\blenderversionfetcher.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -85,33 +110,111 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 16,
-              "Title": "CLEANUP_SUMMARY.md",
-              "DocumentMoniker": "E:\\apps\\BlendHub\\BlendHub\\CLEANUP_SUMMARY.md",
-              "RelativeDocumentMoniker": "BlendHub\\CLEANUP_SUMMARY.md",
-              "ToolTip": "E:\\apps\\BlendHub\\BlendHub\\CLEANUP_SUMMARY.md",
-              "RelativeToolTip": "BlendHub\\CLEANUP_SUMMARY.md",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAFcAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 1,
+              "Title": "requirements.txt",
+              "DocumentMoniker": "E:\\apps\\BlendHub\\requirements.txt",
+              "RelativeDocumentMoniker": "requirements.txt",
+              "ToolTip": "E:\\apps\\BlendHub\\requirements.txt",
+              "RelativeToolTip": "requirements.txt",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
+              "WhenOpened": "2026-04-01T17:29:00.504Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "BlenderVersionFetcher.cs",
+              "DocumentMoniker": "E:\\apps\\BlendHub\\BlendHub\\Helpers\\BlenderVersionFetcher.cs",
+              "RelativeDocumentMoniker": "BlendHub\\Helpers\\BlenderVersionFetcher.cs",
+              "ToolTip": "E:\\apps\\BlendHub\\BlendHub\\Helpers\\BlenderVersionFetcher.cs",
+              "RelativeToolTip": "BlendHub\\Helpers\\BlenderVersionFetcher.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAEwAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-01T17:28:50.914Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "BlenderVersionFetcher.py",
+              "DocumentMoniker": "E:\\apps\\BlendHub\\BlendHub\\Helpers\\BlenderVersionFetcher.py",
+              "RelativeDocumentMoniker": "BlendHub\\Helpers\\BlenderVersionFetcher.py",
+              "ToolTip": "E:\\apps\\BlendHub\\BlendHub\\Helpers\\BlenderVersionFetcher.py",
+              "RelativeToolTip": "BlendHub\\Helpers\\BlenderVersionFetcher.py",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2026-04-01T17:28:39.791Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "update-blender-versions.yml",
+              "DocumentMoniker": "E:\\apps\\BlendHub\\.github\\workflows\\update-blender-versions.yml",
+              "RelativeDocumentMoniker": ".github\\workflows\\update-blender-versions.yml",
+              "ToolTip": "E:\\apps\\BlendHub\\.github\\workflows\\update-blender-versions.yml",
+              "RelativeToolTip": ".github\\workflows\\update-blender-versions.yml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAADAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003775|",
+              "WhenOpened": "2026-04-01T17:28:29.377Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": ".gitignore",
+              "DocumentMoniker": "E:\\apps\\BlendHub\\BlendHub\\.gitignore",
+              "RelativeDocumentMoniker": "BlendHub\\.gitignore",
+              "ToolTip": "E:\\apps\\BlendHub\\BlendHub\\.gitignore*",
+              "RelativeToolTip": "BlendHub\\.gitignore*",
+              "ViewState": "AgIAAAcAAAAAAAAAAAAswFcAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2026-04-01T17:09:07.655Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "GITHUB_CONNECTION.md",
+              "DocumentMoniker": "E:\\apps\\BlendHub\\BlendHub\\GITHUB_CONNECTION.md",
+              "RelativeDocumentMoniker": "BlendHub\\GITHUB_CONNECTION.md",
+              "ToolTip": "E:\\apps\\BlendHub\\BlendHub\\GITHUB_CONNECTION.md",
+              "RelativeToolTip": "BlendHub\\GITHUB_CONNECTION.md",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAANUAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
-              "WhenOpened": "2026-04-01T17:05:39.068Z",
+              "WhenOpened": "2026-04-01T17:18:52.822Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "ProjectPage.xaml",
-              "DocumentMoniker": "E:\\apps\\BlendHub\\BlendHub\\Views\\ProjectPage.xaml",
-              "RelativeDocumentMoniker": "BlendHub\\Views\\ProjectPage.xaml",
-              "ToolTip": "E:\\apps\\BlendHub\\BlendHub\\Views\\ProjectPage.xaml",
-              "RelativeToolTip": "BlendHub\\Views\\ProjectPage.xaml",
-              "ViewState": "AgIAAI8AAAAAAAAAAABBwAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2026-04-01T16:48:25.756Z",
+              "DocumentIndex": 21,
+              "Title": "README.md",
+              "DocumentMoniker": "E:\\apps\\BlendHub\\README.md",
+              "RelativeDocumentMoniker": "README.md",
+              "ToolTip": "E:\\apps\\BlendHub\\README.md",
+              "RelativeToolTip": "README.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAGQAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2026-04-01T17:14:23.412Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 20,
+              "Title": ".gitignore",
+              "DocumentMoniker": "E:\\apps\\BlendHub\\.gitignore",
+              "RelativeDocumentMoniker": ".gitignore",
+              "ToolTip": "E:\\apps\\BlendHub\\.gitignore",
+              "RelativeToolTip": ".gitignore",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAEkAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2026-04-01T17:13:07.315Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
               "Title": "Project.cs",
               "DocumentMoniker": "E:\\apps\\BlendHub\\BlendHub\\Models\\Project.cs",
               "RelativeDocumentMoniker": "BlendHub\\Models\\Project.cs",
@@ -124,7 +227,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 6,
               "Title": "InstallPage.xaml",
               "DocumentMoniker": "E:\\apps\\BlendHub\\BlendHub\\Views\\InstallPage.xaml",
               "RelativeDocumentMoniker": "BlendHub\\Views\\InstallPage.xaml",
@@ -137,20 +240,33 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 5,
               "Title": "InstallPage.xaml.cs",
               "DocumentMoniker": "E:\\apps\\BlendHub\\BlendHub\\Views\\InstallPage.xaml.cs",
               "RelativeDocumentMoniker": "BlendHub\\Views\\InstallPage.xaml.cs",
               "ToolTip": "E:\\apps\\BlendHub\\BlendHub\\Views\\InstallPage.xaml.cs",
               "RelativeToolTip": "BlendHub\\Views\\InstallPage.xaml.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAKMBAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAC4AAAAAAAAAAADgv6sBAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-04-01T17:03:23.775Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 14,
+              "Title": "ProjectPage.xaml",
+              "DocumentMoniker": "E:\\apps\\BlendHub\\BlendHub\\Views\\ProjectPage.xaml",
+              "RelativeDocumentMoniker": "BlendHub\\Views\\ProjectPage.xaml",
+              "ToolTip": "E:\\apps\\BlendHub\\BlendHub\\Views\\ProjectPage.xaml",
+              "RelativeToolTip": "BlendHub\\Views\\ProjectPage.xaml",
+              "ViewState": "AgIAAI8AAAAAAAAAAABBwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2026-04-01T16:48:25.756Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
               "Title": "ProjectPage.xaml.cs",
               "DocumentMoniker": "E:\\apps\\BlendHub\\BlendHub\\Views\\ProjectPage.xaml.cs",
               "RelativeDocumentMoniker": "BlendHub\\Views\\ProjectPage.xaml.cs",
@@ -163,7 +279,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 16,
               "Title": "BlenderVersionJsonInfo.cs",
               "DocumentMoniker": "E:\\apps\\BlendHub\\BlendHub\\Models\\BlenderVersionJsonInfo.cs",
               "RelativeDocumentMoniker": "BlendHub\\Models\\BlenderVersionJsonInfo.cs",
@@ -176,31 +292,20 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 15,
-              "Title": "InstallPage.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\jithu\\AppData\\Local\\Temp\\CopilotBaseline\\Deleted\\-1270434013\\InstallPage.xaml.cs",
-              "ToolTip": "C:\\Users\\jithu\\AppData\\Local\\Temp\\CopilotBaseline\\Deleted\\-1270434013\\InstallPage.xaml.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-01T17:02:51.197Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 14,
+              "DocumentIndex": 19,
               "Title": "DownloadService.cs",
               "DocumentMoniker": "E:\\apps\\BlendHub\\BlendHub\\Services\\DownloadService.cs",
               "RelativeDocumentMoniker": "BlendHub\\Services\\DownloadService.cs",
               "ToolTip": "E:\\apps\\BlendHub\\BlendHub\\Services\\DownloadService.cs",
               "RelativeToolTip": "BlendHub\\Services\\DownloadService.cs",
-              "ViewState": "AgIAAKcAAAAAAAAAAIBJwKoAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAcAAAAAAAAAAIBJwKsAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-04-01T17:00:18.625Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 13,
+              "DocumentIndex": 18,
               "Title": "FileTypeHelper.cs",
               "DocumentMoniker": "E:\\apps\\BlendHub\\BlendHub\\Helpers\\FileTypeHelper.cs",
               "RelativeDocumentMoniker": "BlendHub\\Helpers\\FileTypeHelper.cs",
@@ -213,7 +318,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 12,
+              "DocumentIndex": 17,
               "Title": "VersionHelper.cs",
               "DocumentMoniker": "E:\\apps\\BlendHub\\BlendHub\\Helpers\\VersionHelper.cs",
               "RelativeDocumentMoniker": "BlendHub\\Helpers\\VersionHelper.cs",
@@ -226,7 +331,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 11,
               "Title": "BackupPage.xaml",
               "DocumentMoniker": "E:\\apps\\BlendHub\\BlendHub\\Views\\BackupPage.xaml",
               "RelativeDocumentMoniker": "BlendHub\\Views\\BackupPage.xaml",
@@ -239,7 +344,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 12,
               "Title": "SyncPage.xaml",
               "DocumentMoniker": "E:\\apps\\BlendHub\\BlendHub\\Views\\SyncPage.xaml",
               "RelativeDocumentMoniker": "BlendHub\\Views\\SyncPage.xaml",
@@ -252,7 +357,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 7,
               "Title": "BlenderDownloadVersion.cs",
               "DocumentMoniker": "E:\\apps\\BlendHub\\BlendHub\\Models\\BlenderDownloadVersion.cs",
               "RelativeDocumentMoniker": "BlendHub\\Models\\BlenderDownloadVersion.cs",
@@ -265,7 +370,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 9,
               "Title": "blender_versions_web.json",
               "DocumentMoniker": "E:\\apps\\BlendHub\\BlendHub\\blender_versions_web.json",
               "RelativeDocumentMoniker": "BlendHub\\blender_versions_web.json",
@@ -277,7 +382,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 8,
               "Title": "App.g.i.cs",
               "DocumentMoniker": "E:\\apps\\BlendHub\\BlendHub\\obj\\x64\\Debug\\net8.0-windows10.0.19041.0\\win-x64\\App.g.i.cs",
               "RelativeDocumentMoniker": "BlendHub\\obj\\x64\\Debug\\net8.0-windows10.0.19041.0\\win-x64\\App.g.i.cs",
@@ -290,7 +395,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 10,
               "Title": "HomePage.xaml",
               "DocumentMoniker": "E:\\apps\\BlendHub\\BlendHub\\Views\\HomePage.xaml",
               "RelativeDocumentMoniker": "BlendHub\\Views\\HomePage.xaml",
