@@ -14,6 +14,8 @@ generate_assets.py
 # Build outputs
 bin/
 obj/
+src/bin/
+src/obj/
 [Bb]in/
 [Oo]bj/
 
