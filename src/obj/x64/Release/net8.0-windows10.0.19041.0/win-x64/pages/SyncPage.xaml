@@ -1,0 +1,135 @@
+﻿<Page
+    x:Class="BlendHub.Pages.SyncPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:BlendHub.Pages"
+    xmlns:models="using:BlendHub.Models"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:controls="using:CommunityToolkit.WinUI.Controls"
+    mc:Ignorable="d">
+
+    <Grid Padding="24,24,24,24">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState x:ConnectionId='2' x:Name="WideState">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="800" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+                <VisualState x:ConnectionId='3' x:Name="NarrowState">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="HeaderGrid.ColumnDefinitions[1].Width" Value="0" />
+                        <Setter Target="ActionPanel.(Grid.Row)" Value="1" />
+                        <Setter Target="ActionPanel.(Grid.Column)" Value="0" />
+                        <Setter Target="ActionPanel.HorizontalAlignment" Value="Left" />
+                        <Setter Target="ActionPanel.Margin" Value="0,16,0,0" />
+                        <Setter Target="StatusText.HorizontalAlignment" Value="Left" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid x:ConnectionId='4' x:Name="HeaderGrid" Grid.Row="0" Margin="0,0,0,20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Row="0" Grid.Column="0" Spacing="4" VerticalAlignment="Center">
+                <TextBlock Text="Sync Settings" 
+                         FontSize="28" 
+                         FontWeight="SemiBold"
+                         AutomationProperties.HeadingLevel="Level1" />
+            </StackPanel>
+
+            <StackPanel x:ConnectionId='18' x:Name="ActionPanel" Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="16" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <StackPanel VerticalAlignment="Center" Spacing="4">
+                    <TextBlock x:ConnectionId='20' x:Name="StatusText" Text="" FontWeight="Medium" HorizontalAlignment="Right" FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <ProgressBar x:ConnectionId='21' x:Name="SyncProgressBar" Value="0" Maximum="100" Height="4" MinWidth="120" IsIndeterminate="False" Opacity="0" />
+                </StackPanel>
+                <Button x:ConnectionId='19' x:Name="StartSyncButton" Content="Start Sync" Style="{StaticResource AccentButtonStyle}" Padding="24,10" FontSize="14" FontWeight="Normal"                               />
+            </StackPanel>
+        </Grid>
+
+        <!-- Info Bars -->
+        <StackPanel x:ConnectionId='5' x:Name="InfoBarPanel" Grid.Row="1" Spacing="4" Margin="0,0,0,0">
+            <InfoBar x:ConnectionId='15' x:Name="WarningInfoBar" IsOpen="False" IsClosable="True" Severity="Warning" Title="" Message=""                         />
+            <InfoBar x:ConnectionId='16' x:Name="ErrorInfoBar"   IsOpen="False" IsClosable="True" Severity="Error"   Title="" Message=""                         />
+            <InfoBar x:ConnectionId='17' x:Name="SuccessInfoBar" IsOpen="False" IsClosable="True" Severity="Success"  Title="Sync Complete" Message=""                         />
+        </StackPanel>
+
+        <!-- Main Content -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Stretch" Padding="0,0,0,0">
+            <StackPanel Spacing="16">
+
+                <StackPanel Spacing="2">
+                    <controls:SettingsCard Header="Source Blender Version" Description="Choose which Blender version's settings you want to copy.">
+                        <ComboBox x:ConnectionId='14' x:Name="SourceVersionComboBox" MinWidth="200" DisplayMemberPath="DisplayName"                                                           HorizontalAlignment="Right" />
+                    </controls:SettingsCard>
+
+                    <!-- Target Blender Versions -->
+                    <controls:SettingsExpander Header="Target Blender Versions" Description="Select the Blender versions you want to synchronize with the source." IsExpanded="True">
+                        <controls:SettingsExpander.Items>
+                            <controls:SettingsCard ContentAlignment="Vertical" HorizontalAlignment="Stretch" Padding="32,8">
+                                <ItemsRepeater x:ConnectionId='10' x:Name="TargetVersionsListView" HorizontalAlignment="Stretch" Margin="0,8">
+                                    <ItemsRepeater.Layout>
+                                        <UniformGridLayout MinItemWidth="160" Orientation="Horizontal" ItemsStretch="Fill" />
+                                    </ItemsRepeater.Layout>
+                                    <ItemsRepeater.ItemTemplate>
+                                        <DataTemplate                                           >
+                                            <Grid x:ConnectionId='12' MinWidth="160" Margin="4" Padding="8,4">
+                                                <CheckBox x:ConnectionId='13'                                                                             VerticalAlignment="Center" Margin="0" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsRepeater.ItemTemplate>
+                                </ItemsRepeater>
+                            </controls:SettingsCard>
+                        </controls:SettingsExpander.Items>
+                    </controls:SettingsExpander>
+
+                    <!-- Items to Sync -->
+                    <controls:SettingsExpander Header="Items to Sync" Description="Select which parts of the configuration to synchronize." IsExpanded="True">
+                        <controls:SettingsExpander.Items>
+                            <controls:SettingsCard ContentAlignment="Vertical" HorizontalAlignment="Stretch" Padding="32,8">
+                                <ItemsRepeater x:ConnectionId='6' x:Name="ItemsListView" HorizontalAlignment="Stretch" Margin="0,8">
+                                    <ItemsRepeater.Layout>
+                                        <UniformGridLayout MinItemWidth="160" Orientation="Horizontal" ItemsStretch="Fill" />
+                                    </ItemsRepeater.Layout>
+                                    <ItemsRepeater.ItemTemplate>
+                                        <DataTemplate                                        >
+                                            <Grid x:ConnectionId='8' MinWidth="160" Margin="4" Padding="8,4" 
+                                                                                               >
+                                                <CheckBox x:ConnectionId='9'                         
+                                                                                                      
+                                                                                       
+                                                          VerticalAlignment="Center"
+                                                          Margin="0" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsRepeater.ItemTemplate>
+                                </ItemsRepeater>
+                            </controls:SettingsCard>
+                        </controls:SettingsExpander.Items>
+                    </controls:SettingsExpander>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+    </Grid>
+</Page>
+

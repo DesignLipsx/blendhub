@@ -1,0 +1,114 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="BlendHub.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:BlendHub"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="BlendHub">
+
+    <Window.SystemBackdrop>
+        <MicaBackdrop />
+    </Window.SystemBackdrop>
+
+    <Grid x:ConnectionId='2' x:Name="RootGrid">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- WinUI 3 Gallery-style TitleBar -->
+        <TitleBar x:ConnectionId='3'
+            x:Name="AppTitleBar"
+            Title="BlendHub"
+            IsBackButtonVisible="False"
+            IsPaneToggleButtonVisible="True"
+                                                                 >
+            <TitleBar.IconSource>
+                <ImageIconSource ImageSource="ms-appx:///Assets/logo.png" />
+            </TitleBar.IconSource>
+            <TitleBar.Content>
+                <Grid />
+            </TitleBar.Content>
+        </TitleBar>
+
+        <!-- NavigationView matching WinUI 3 Gallery layout -->
+        <NavigationView x:ConnectionId='4'
+            x:Name="NavView"
+            Grid.Row="1"
+            Canvas.ZIndex="0"
+            PaneDisplayMode="Left"
+            IsBackButtonVisible="Collapsed"
+            IsBackEnabled="False"
+            IsPaneToggleButtonVisible="False"
+            IsSettingsVisible="True"
+            IsTabStop="False"
+            IsPaneOpen="False"
+                                                           
+                                                       
+                                             >
+
+            <NavigationView.MenuItems>
+                <NavigationViewItem x:ConnectionId='5' x:Name="HomeItem" Content="Home" Tag="home"
+                                    AutomationProperties.AutomationId="HomeItem">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE80F;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem x:ConnectionId='6' x:Name="ProjectItem" Content="Projects" Tag="project"
+                                    AutomationProperties.AutomationId="ProjectItem">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xED25;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+
+                <NavigationViewItemSeparator />
+                <NavigationViewItemHeader Content="Blender" />
+                <NavigationViewItem x:ConnectionId='7' x:Name="DownloadItem" Content="Download" Tag="download"
+                                    AutomationProperties.AutomationId="DownloadItem">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE896;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+
+                <NavigationViewItem x:ConnectionId='8' x:Name="BackupItem" Content="Backup" Tag="backup"
+                                    AutomationProperties.AutomationId="BackupItem">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE78C;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem x:ConnectionId='9' x:Name="RestoreItem" Content="Restore" Tag="restore"
+                                    AutomationProperties.AutomationId="RestoreItem">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE777;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem x:ConnectionId='10' x:Name="SyncItem" Content="Sync" Tag="sync"
+                                    AutomationProperties.AutomationId="SyncItem">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE895;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+
+            </NavigationView.MenuItems>
+
+            <NavigationView.FooterMenuItems>
+                <NavigationViewItem x:ConnectionId='11' x:Name="FeedbackItem" 
+                                    Content="Feedback" 
+                                    Tag="feedback"
+                                    SelectsOnInvoked="False"
+                                    AutomationProperties.AutomationId="FeedbackItem">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xED15;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.FooterMenuItems>
+
+            <Frame x:ConnectionId='12' x:Name="ContentFrameInternal"
+                                                      />
+        </NavigationView>
+    </Grid>
+</Window>
+
